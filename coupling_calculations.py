@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from bolt_database import BoltSize, PropertyClass
+from standards import get_standard_profile
 
 
 @dataclass(frozen=True)
@@ -21,12 +22,17 @@ class CouplingInputs:
     joint_stiffness_n_per_mm: float
     max_yield_utilization: float
     radius_model: str = "uniform_pressure"
+    cyclic_torque_nm: float = 0.0
+    transient_torque_nm: float = 0.0
+    standard_profile: str = "metallic_flexible_element"
 
 
 @dataclass(frozen=True)
 class CouplingResult:
     effective_radius_mm: float
+    steady_state_selection_torque_nm: float
     design_torque_nm: float
+    governing_torque_case: str
     slip_capacity_nm: float
     slip_safety_factor: float
     residual_pretension_n: float
@@ -40,6 +46,7 @@ class CouplingResult:
     required_preload_yield_utilization: float
     load_fraction_to_bolt: float
     bolt_load_under_service_n: float
+    minimum_service_factor: float
     joint_separates: bool
     warnings: tuple[str, ...]
 
@@ -49,6 +56,10 @@ def validate_inputs(values: CouplingInputs) -> None:
         raise ValueError("Transmitted torque must be zero or positive.")
     if values.service_factor <= 0:
         raise ValueError("Service factor must be greater than zero.")
+    if values.cyclic_torque_nm < 0:
+        raise ValueError("Cyclic torque must be zero or positive.")
+    if values.transient_torque_nm < 0:
+        raise ValueError("Transient torque must be zero or positive.")
     if values.bolt_count < 1:
         raise ValueError("Bolt count must be at least one.")
     if values.friction_coefficient <= 0:
@@ -69,6 +80,7 @@ def validate_inputs(values: CouplingInputs) -> None:
         raise ValueError("Bolt and joint stiffness must both be greater than zero.")
     if not 0 < values.max_yield_utilization <= 1:
         raise ValueError("Maximum yield utilization must be between 0 and 1.")
+    get_standard_profile(values.standard_profile)
 
 
 def effective_radius(inner_radius_mm: float, outer_radius_mm: float, model: str) -> float:
@@ -93,7 +105,13 @@ def calculate(
         values.radius_model,
     )
     loss_factor = 1.0 - values.preload_loss_percent / 100.0
-    design_torque = values.transmitted_torque_nm * values.service_factor
+    steady_state_selection_torque = values.transmitted_torque_nm * values.service_factor
+    torque_cases = (
+        ("steady-state selection", steady_state_selection_torque),
+        ("cyclic torque", values.cyclic_torque_nm),
+        ("maximum transient torque", values.transient_torque_nm),
+    )
+    governing_torque_case, design_torque = max(torque_cases, key=lambda item: item[1])
     residual_pretension = values.initial_preload_per_bolt_n * loss_factor
     total_residual_clamp = residual_pretension * values.bolt_count
     slip_capacity = (
@@ -132,8 +150,15 @@ def calculate(
     service_yield_util = bolt_load_under_service / bolt_yield_load
     required_yield_util = required_initial_per_bolt / bolt_yield_load
     joint_separates = service_residual_pretension <= 0
+    standard_profile = get_standard_profile(values.standard_profile)
 
     warnings: list[str] = []
+    if values.service_factor < standard_profile.minimum_service_factor:
+        warnings.append(
+            f"Service factor is below the {standard_profile.minimum_service_factor:g} minimum for {standard_profile.label}."
+        )
+    if governing_torque_case != "steady-state selection":
+        warnings.append(f"Design torque is governed by {governing_torque_case}.")
     if slip_safety < 1.0:
         warnings.append("Slip torque capacity is below design torque demand.")
     if assembly_yield_util > values.max_yield_utilization:
@@ -151,7 +176,9 @@ def calculate(
 
     return CouplingResult(
         effective_radius_mm=radius,
+        steady_state_selection_torque_nm=steady_state_selection_torque,
         design_torque_nm=design_torque,
+        governing_torque_case=governing_torque_case,
         slip_capacity_nm=slip_capacity,
         slip_safety_factor=slip_safety,
         residual_pretension_n=residual_pretension,
@@ -165,6 +192,7 @@ def calculate(
         required_preload_yield_utilization=required_yield_util,
         load_fraction_to_bolt=phi,
         bolt_load_under_service_n=bolt_load_under_service,
+        minimum_service_factor=standard_profile.minimum_service_factor,
         joint_separates=joint_separates,
         warnings=tuple(warnings),
     )

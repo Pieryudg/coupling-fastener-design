@@ -1,6 +1,7 @@
 import math
 import sys
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 
@@ -9,6 +10,7 @@ sys.path.insert(0, str(APP_DIR))
 
 from bolt_database import connect, get_bolt_size, get_property_class, recommend_bolt_size
 from coupling_calculations import CouplingInputs, calculate, effective_radius
+from standards import get_standard_profile, standard_basis_lines
 
 
 def default_inputs():
@@ -41,6 +43,9 @@ class CouplingFastenerAppTests(unittest.TestCase):
         result = calculate(default_inputs(), bolt, prop)
 
         self.assertTrue(math.isclose(result.slip_safety_factor, 1.4466, rel_tol=1e-3))
+        self.assertEqual(result.design_torque_nm, 1800)
+        self.assertEqual(result.governing_torque_case, "steady-state selection")
+        self.assertEqual(result.minimum_service_factor, 1.5)
         self.assertEqual(result.residual_pretension_n, 21250)
         self.assertTrue(math.isclose(result.service_residual_pretension_n, 20916.667, rel_tol=1e-4))
         self.assertTrue(math.isclose(result.assembly_yield_utilization, 0.4789, rel_tol=1e-3))
@@ -59,6 +64,33 @@ class CouplingFastenerAppTests(unittest.TestCase):
 
         self.assertIsNotNone(recommendation)
         self.assertEqual(recommendation.designation, "M8")
+
+    def test_transient_torque_can_govern_design_torque(self):
+        conn = connect()
+        inputs = replace(default_inputs(), transient_torque_nm=2500)
+
+        result = calculate(inputs, get_bolt_size(conn, "M10"), get_property_class(conn, "10.9"))
+
+        self.assertEqual(result.design_torque_nm, 2500)
+        self.assertEqual(result.governing_torque_case, "maximum transient torque")
+        self.assertIn("Design torque is governed by maximum transient torque.", result.warnings)
+
+    def test_standard_profile_warns_on_low_service_factor(self):
+        conn = connect()
+        inputs = replace(default_inputs(), service_factor=1.2, standard_profile="gear")
+
+        result = calculate(inputs, get_bolt_size(conn, "M10"), get_property_class(conn, "10.9"))
+
+        self.assertEqual(result.minimum_service_factor, 1.75)
+        self.assertIn("Service factor is below the 1.75 minimum for Gear coupling.", result.warnings)
+
+    def test_standard_basis_mentions_agma_stiffness_boundary(self):
+        profile = get_standard_profile("metallic_flexible_element")
+
+        self.assertEqual(profile.minimum_service_factor, 1.5)
+        self.assertTrue(
+            any("bolting connection stiffness" in line for line in standard_basis_lines(profile.key))
+        )
 
 
 if __name__ == "__main__":

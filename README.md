@@ -2,6 +2,13 @@
 
 Independent native desktop GUI app for friction-type flange coupling fastener sizing. The main app is built with PySide6/Qt and uses a local SQLite bolt database.
 
+The calculation workflow includes standard-aware guardrails derived from the local John Crane knowledge base:
+
+- API 671 style coupling profiles apply minimum service-factor checks for metallic flexible element, gear, torsional damping/resilient, quill-shaft, and agreed reduced metallic flexible applications.
+- Design torque is governed by the largest entered steady-state selection torque, cyclic torque, or maximum transient torque.
+- AGMA 9104 mass-elastic guidance is treated as a boundary condition for this app: bolt/joint stiffness remains a vendor, measured, or user-entered value rather than an inferred AGMA value.
+- AGMA bore, keyway, fit, and balance requirements are flagged as separate checks outside this friction fastener sizing model.
+
 The app uses a local SQLite database generated at startup:
 
 ```text
@@ -74,6 +81,7 @@ Friction torque capacity:
 
 ```text
 T_slip = mu * F_clamp,residual,total * r_eff * n_interfaces
+T_design = max(T_transmitted * service_factor, T_cyclic, T_transient)
 ```
 
 Bolt material yield check:

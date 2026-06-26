@@ -15,6 +15,14 @@ from bolt_database import (
     recommend_bolt_size,
 )
 from coupling_calculations import CouplingInputs, CouplingResult, calculate
+from standards import standard_basis_lines, standard_profile_items
+
+
+GOVERNING_CASE_DISPLAY = {
+    "steady-state selection": "Steady",
+    "cyclic torque": "Cyclic",
+    "maximum transient torque": "Transient",
+}
 
 
 def smoke_test() -> None:
@@ -24,6 +32,8 @@ def smoke_test() -> None:
     inputs = CouplingInputs(
         transmitted_torque_nm=1200,
         service_factor=1.5,
+        cyclic_torque_nm=0,
+        transient_torque_nm=0,
         bolt_count=8,
         friction_coefficient=0.18,
         inner_radius_mm=45,
@@ -40,6 +50,8 @@ def smoke_test() -> None:
     print(f"database={DATABASE_PATH}")
     print(f"bolt={bolt.designation} class={prop.name}")
     print(f"slip_safety_factor={result.slip_safety_factor:.3f}")
+    print(f"governing_torque_case={result.governing_torque_case}")
+    print(f"design_torque_nm={result.design_torque_nm:.1f}")
     print(f"residual_pretension_n={result.residual_pretension_n:.1f}")
     print(f"service_residual_pretension_n={result.service_residual_pretension_n:.1f}")
     print(f"assembly_yield_utilization={result.assembly_yield_utilization:.3f}")
@@ -301,15 +313,23 @@ def run_gui() -> int:
             self.property_class.setCurrentText("10.9")
             self.radius_model = QComboBox()
             self.radius_model.addItems(["uniform_pressure", "uniform_wear"])
+            self.standard_profile = QComboBox()
+            self.profile_keys_by_label = {
+                label: key for key, label in standard_profile_items()
+            }
+            self.standard_profile.addItems(list(self.profile_keys_by_label.keys()))
 
             form = QFormLayout()
             form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
             self._add_form_row(form, "Bolt size", self.bolt_size)
             self._add_form_row(form, "Material class", self.property_class)
+            self._add_form_row(form, "Standard profile", self.standard_profile)
             self._add_form_row(form, "Friction radius model", self.radius_model)
 
             self.torque = self._double(1200, 0, 1_000_000, 1)
             self.service_factor = self._double(1.5, 0.01, 10, 2)
+            self.cyclic_torque = self._double(0, 0, 10_000_000, 1)
+            self.transient_torque = self._double(0, 0, 10_000_000, 1)
             self.bolt_count = self._spin(8, 1, 128)
             self.mu = self._double(0.18, 0.01, 1.0, 3)
             self.inner_radius = self._double(45, 0, 10_000, 1)
@@ -325,6 +345,8 @@ def run_gui() -> int:
             for label, widget, unit in [
                 ("Transmitted torque", self.torque, "N*m"),
                 ("Service factor", self.service_factor, "x"),
+                ("Cyclic torque", self.cyclic_torque, "N*m"),
+                ("Transient torque", self.transient_torque, "N*m"),
                 ("Number of bolts", self.bolt_count, "pcs"),
                 ("Friction coefficient", self.mu, "mu"),
                 ("Inner friction radius", self.inner_radius, "mm"),
@@ -355,9 +377,12 @@ def run_gui() -> int:
             for widget in [
                 self.bolt_size,
                 self.property_class,
+                self.standard_profile,
                 self.radius_model,
                 self.torque,
                 self.service_factor,
+                self.cyclic_torque,
+                self.transient_torque,
                 self.bolt_count,
                 self.mu,
                 self.inner_radius,
@@ -435,6 +460,8 @@ def run_gui() -> int:
                 ("Slip safety factor", "slip_sf"),
                 ("Slip torque capacity", "slip_capacity"),
                 ("Design torque demand", "design_torque"),
+                ("Governing torque case", "governing_case"),
+                ("Minimum service factor", "minimum_sf"),
                 ("Residual pretension", "residual"),
                 ("Residual after axial load", "service_residual"),
                 ("Required initial preload", "required_initial"),
@@ -459,6 +486,8 @@ def run_gui() -> int:
             return CouplingInputs(
                 transmitted_torque_nm=self.torque.value(),
                 service_factor=self.service_factor.value(),
+                cyclic_torque_nm=self.cyclic_torque.value(),
+                transient_torque_nm=self.transient_torque.value(),
                 bolt_count=self.bolt_count.value(),
                 friction_coefficient=self.mu.value(),
                 inner_radius_mm=self.inner_radius.value(),
@@ -471,6 +500,7 @@ def run_gui() -> int:
                 joint_stiffness_n_per_mm=self.joint_stiffness.value(),
                 max_yield_utilization=self.yield_limit.value(),
                 radius_model=self.radius_model.currentText(),
+                standard_profile=self.profile_keys_by_label[self.standard_profile.currentText()],
             )
 
         def update_calculation(self) -> None:
@@ -485,7 +515,8 @@ def run_gui() -> int:
 
             self.spec.setText(
                 f"{bolt.designation} x {bolt.pitch_mm:g} | As {bolt.tensile_area_mm2:g} mm2 | "
-                f"class {prop.name}, yield {prop.yield_mpa:g} MPa"
+                f"class {prop.name}, yield {prop.yield_mpa:g} MPa | "
+                f"governing: {GOVERNING_CASE_DISPLAY.get(result.governing_torque_case, result.governing_torque_case)}"
             )
             self.status.setText("OK" if result.warnings[0] == "All current checks pass." else "Check")
             self.status.setProperty("warning", result.warnings[0] != "All current checks pass.")
@@ -496,6 +527,10 @@ def run_gui() -> int:
             self.cards["slip_sf"].set_value(f"{result.slip_safety_factor:.2f}", result.slip_safety_factor < 1)
             self.cards["slip_capacity"].set_value(f"{result.slip_capacity_nm:,.0f} N*m")
             self.cards["design_torque"].set_value(f"{result.design_torque_nm:,.0f} N*m")
+            self.cards["governing_case"].set_value(
+                GOVERNING_CASE_DISPLAY.get(result.governing_torque_case, result.governing_torque_case)
+            )
+            self.cards["minimum_sf"].set_value(f"{result.minimum_service_factor:g}x", inputs.service_factor < result.minimum_service_factor)
             self.cards["residual"].set_value(f"{result.residual_pretension_n:,.0f} N")
             self.cards["service_residual"].set_value(f"{result.service_residual_pretension_n:,.0f} N", result.service_residual_pretension_n <= 0)
             self.cards["required_initial"].set_value(f"{result.required_initial_preload_per_bolt_n:,.0f} N", result.required_preload_yield_utilization > inputs.max_yield_utilization)
@@ -510,7 +545,13 @@ def run_gui() -> int:
                 if rec
                 else "No database bolt size satisfies the required preload within the selected yield limit."
             )
-            self.checks.setText(rec_text + "\n\n" + "\n".join(f"- {item}" for item in result.warnings))
+            standard_text = "\n".join(
+                f"- {item}" for item in standard_basis_lines(inputs.standard_profile)
+            )
+            checks_text = "\n".join(f"- {item}" for item in result.warnings)
+            self.checks.setText(
+                f"{rec_text}\n\nStandards basis:\n{standard_text}\n\nChecks:\n{checks_text}"
+            )
 
     app = QApplication(sys.argv)
     app.setStyleSheet(
