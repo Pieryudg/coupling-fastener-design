@@ -1,0 +1,48 @@
+{
+  "version": "ctp_0007_seed_v1",
+  "source": "CTP 0007.xltx cached values audited from CTP 0007 and Donnees Vis",
+  "default": {
+    "reference": "TSKW/0360/KA/GA253480 Hub Bolts",
+    "bolt_type_code": "1512",
+    "size_code": "47xx",
+    "material_code": "0225 (Classe 12-9)",
+    "screw_nut_friction_label": "Emuge+Oil",
+    "nut_part_friction_label": "Light Oil",
+    "part_part_friction_label": "API 671"
+  },
+  "bolt_variants": [
+    {
+      "type_code": "1512",
+      "size_code": "47xx",
+      "thread_diameter_mm": 16.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 8.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 24.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 365.0
+      }
+    }
+  ],
+  "materials": [
+    {"code": "0418 (Classe 8-8)", "yield_strength_mpa": 640.0},
+    {"code": "1557 (Classe 10-9)", "yield_strength_mpa": 900.0},
+    {"code": "0225 (Classe 12-9)", "yield_strength_mpa": 1080.0},
+    {"code": "0336 (42CrMo4)", "yield_strength_mpa": 650.0},
+    {"code": "0435 (EN17/24T)", "yield_strength_mpa": 635.0},
+    {"code": "0436 (EN24X)", "yield_strength_mpa": 1005.0},
+    {"code": "0419 (35-CD-4)", "yield_strength_mpa": 665.0},
+    {"code": "1052 (High T.steel)", "yield_strength_mpa": 1080.0},
+    {"code": "A2/A4-50 S Steel", "yield_strength_mpa": 210.0},
+    {"code": "A2/A4-70 S Steel", "yield_strength_mpa": 450.0},
+    {"code": "A2/A4-80 S Steel", "yield_strength_mpa": 600.0},
+    {"code": "0550 (Inox 80)", "yield_strength_mpa": 600.0}
+  ],
+  "friction_factors": [
+    {"label": "Emuge+Oil", "mu": 0.155},
+    {"label": "Light Oil", "mu": 0.12},
+    {"label": "API 671", "mu": 0.15},
+    {"label": "Custom", "mu": 0.15}
+  ]
+}

@@ -56,6 +56,28 @@ Native app dependency:
 PySide6
 ```
 
+## CTP 0007 mode
+
+The desktop app now includes a CTP 0007 calculation mode alongside the
+original simplified friction model. The first CTP implementation uses a
+versioned seed extracted from cached values in:
+
+```text
+/Volumes/Seagate/04. Calculation Sheets/Calculation sheets/CTP 0007.xltx
+```
+
+The seed is stored at:
+
+```text
+data/ctp_0007_seed.json
+```
+
+The CTP mode covers the Phase 1 direct formula chain from the workbook:
+tightening torque to preload, flange friction torque, residual shear,
+bolt/sleeve stress status, thread-root assembly stress, first-thread
+pull-out stress, and the combined check summary. Engineering-equivalent
+Goal Seek helpers are implemented in the pure calculation module.
+
 Optional Windows `.exe` build, from PowerShell on Windows:
 
 ```powershell
