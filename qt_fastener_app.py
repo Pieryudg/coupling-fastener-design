@@ -16,6 +16,19 @@ from bolt_database import (
 )
 from coupling_calculations import CouplingInputs, CouplingResult, calculate
 from standards import standard_basis_lines, standard_profile_items
+from ctp_calculations import CTPInputs, CTPResult, StatusValue, calculate_ctp
+from ctp_database import (
+    build_ctp_friction,
+    build_ctp_geometry,
+    default_ctp_inputs,
+    get_ctp_material,
+    list_ctp_bolt_types,
+    list_ctp_friction_labels,
+    list_ctp_materials,
+    list_ctp_sizes,
+    load_ctp_data,
+    standard_tightening_torque_nm,
+)
 
 
 GOVERNING_CASE_DISPLAY = {
@@ -55,6 +68,11 @@ def smoke_test() -> None:
     print(f"residual_pretension_n={result.residual_pretension_n:.1f}")
     print(f"service_residual_pretension_n={result.service_residual_pretension_n:.1f}")
     print(f"assembly_yield_utilization={result.assembly_yield_utilization:.3f}")
+    ctp_result = calculate_ctp(default_ctp_inputs())
+    print(f"ctp_preload_n={ctp_result.preload_n:.3f}")
+    print(f"ctp_momentary_bolt_sf={ctp_result.case('momentary').bolt_safety_factor.value:.3f}")
+    print(f"ctp_thread_root_sf={ctp_result.thread_root_safety_factor.value:.3f}")
+    print(f"ctp_check={ctp_result.check_summary}")
 
 
 def run_gui() -> int:
@@ -82,7 +100,7 @@ def run_gui() -> int:
     except ModuleNotFoundError:
         print("PySide6 is required for the native GUI.")
         print("Install it with:")
-        print("  python3 -m pip install -r apps/coupling-fastener-desktop/requirements-desktop.txt")
+        print("  ./setup_macos.command")
         return 2
 
     class DiagramWidget(QWidget):
@@ -275,9 +293,12 @@ def run_gui() -> int:
         def __init__(self) -> None:
             super().__init__()
             self.conn = connect()
+            self.ctp_data = load_ctp_data()
             self.setWindowTitle("Coupling Fastener Design")
-            self.resize(1240, 800)
+            self.resize(1500, 880)
             self.cards: dict[str, ResultCard] = {}
+            self.simple_card_keys: list[str] = []
+            self.ctp_card_keys: list[str] = []
             self._build_ui()
             self.update_calculation()
 
@@ -285,8 +306,8 @@ def run_gui() -> int:
             root = QWidget()
             self.setCentralWidget(root)
             layout = QGridLayout(root)
-            layout.setContentsMargins(14, 14, 14, 14)
-            layout.setHorizontalSpacing(14)
+            layout.setContentsMargins(12, 12, 12, 12)
+            layout.setHorizontalSpacing(12)
 
             inputs = self._build_inputs()
             workbench = self._build_workbench()
@@ -295,16 +316,37 @@ def run_gui() -> int:
             layout.addWidget(workbench, 0, 1)
             layout.addWidget(results, 0, 2)
             layout.setColumnStretch(1, 1)
+            self._update_mode_visibility()
 
         def _build_inputs(self) -> QWidget:
+            scroll = QScrollArea()
+            scroll.setObjectName("inputScroll")
+            scroll.setFixedWidth(500)
+            scroll.setWidgetResizable(True)
+            scroll.setFrameShape(QFrame.Shape.NoFrame)
+            scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
             frame = QFrame()
             frame.setObjectName("inputRail")
-            frame.setFixedWidth(340)
+            scroll.setWidget(frame)
             layout = QVBoxLayout(frame)
             title = QLabel("Coupling Fastener Design")
             title.setObjectName("railTitle")
             layout.addWidget(title)
 
+            mode_form = QFormLayout()
+            mode_form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+            self._configure_form(mode_form)
+            self.mode = QComboBox()
+            self.mode.addItems(["Simple friction model", "CTP 0007 model"])
+            self.mode.setCurrentText("CTP 0007 model")
+            self._add_form_row(mode_form, "Calculation mode", self.mode)
+            layout.addLayout(mode_form)
+
+            self.simple_group = QGroupBox("Simple friction model")
+            form = QFormLayout(self.simple_group)
+            form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+            self._configure_form(form)
             self.bolt_size = QComboBox()
             self.bolt_size.addItems(list_bolt_sizes(self.conn))
             self.bolt_size.setCurrentText("M10")
@@ -319,8 +361,6 @@ def run_gui() -> int:
             }
             self.standard_profile.addItems(list(self.profile_keys_by_label.keys()))
 
-            form = QFormLayout()
-            form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
             self._add_form_row(form, "Bolt size", self.bolt_size)
             self._add_form_row(form, "Material class", self.property_class)
             self._add_form_row(form, "Standard profile", self.standard_profile)
@@ -362,13 +402,99 @@ def run_gui() -> int:
                 row = QWidget()
                 row_layout = QHBoxLayout(row)
                 row_layout.setContentsMargins(0, 0, 0, 0)
-                row_layout.addWidget(widget)
+                row_layout.addWidget(widget, 1)
                 unit_label = QLabel(unit)
                 unit_label.setObjectName("unitLabel")
+                unit_label.setFixedWidth(56)
                 row_layout.addWidget(unit_label)
                 self._add_form_row(form, label, row)
 
-            layout.addLayout(form)
+            layout.addWidget(self.simple_group)
+
+            self.ctp_group = QGroupBox("CTP 0007 model")
+            ctp_form = QFormLayout(self.ctp_group)
+            ctp_form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+            self._configure_form(ctp_form)
+            defaults = self.ctp_data["default"]
+            self.ctp_type = QComboBox()
+            self.ctp_type.addItems(list_ctp_bolt_types(self.ctp_data))
+            self.ctp_type.setCurrentText(defaults["bolt_type_code"])
+            self.ctp_size = QComboBox()
+            self.ctp_size.addItems(list_ctp_sizes(self.ctp_type.currentText(), self.ctp_data))
+            self.ctp_size.setCurrentText(defaults["size_code"])
+            self.ctp_material = QComboBox()
+            self.ctp_material.addItems(list_ctp_materials(self.ctp_data))
+            self.ctp_material.setCurrentText(defaults["material_code"])
+            self.ctp_shear_plane = QComboBox()
+            self.ctp_shear_plane.addItems(["Thread", "Shank"])
+
+            self.ctp_screw_mu_label = QComboBox()
+            self.ctp_nut_mu_label = QComboBox()
+            self.ctp_part_mu_label = QComboBox()
+            friction_labels = list_ctp_friction_labels(self.ctp_data)
+            for combo in [self.ctp_screw_mu_label, self.ctp_nut_mu_label, self.ctp_part_mu_label]:
+                combo.addItems(friction_labels)
+            self.ctp_screw_mu_label.setCurrentText(defaults["screw_nut_friction_label"])
+            self.ctp_nut_mu_label.setCurrentText(defaults["nut_part_friction_label"])
+            self.ctp_part_mu_label.setCurrentText(defaults["part_part_friction_label"])
+
+            self.ctp_pcd = self._double(447, 0.1, 100_000, 1)
+            self.ctp_screw_count = self._spin(10, 1, 512)
+            self.ctp_cont_torque = self._double(40100, 0, 10_000_000, 0)
+            self.ctp_peak_factor = self._double(2.0, 0, 100, 2)
+            self.ctp_momentary_factor = self._double(1.15, 0, 100, 2)
+            self.ctp_tightening_torque = self._double(0, 0, 1_000_000, 1)
+            self.ctp_percent_tys = self._double(0, 0, 100, 1)
+            self.ctp_sleeve_od = self._double(0, 0, 10_000, 2)
+            self.ctp_sleeve_yield = self._double(640, 1, 10_000, 0)
+            self.ctp_leverarm = self._double(0.05, 0, 10_000, 3)
+            self.ctp_groove_diameter = self._double(0, 0, 10_000, 2)
+            self.ctp_contact_diameter = self._double(24, 0.1, 10_000, 2)
+            self.ctp_thread_engagement = self._double(0, 0, 10_000, 2)
+            self.ctp_custom_screw_mu = self._double(0.155, 0.001, 2.0, 3)
+            self.ctp_custom_nut_mu = self._double(0.12, 0.001, 2.0, 3)
+            self.ctp_custom_part_mu = self._double(0.15, 0.001, 2.0, 3)
+
+            for label, widget in [
+                ("Type", self.ctp_type),
+                ("Size", self.ctp_size),
+                ("Material", self.ctp_material),
+                ("Shear plane", self.ctp_shear_plane),
+                ("Screw/Nut friction", self.ctp_screw_mu_label),
+                ("Nut/Part friction", self.ctp_nut_mu_label),
+                ("Part/Part friction", self.ctp_part_mu_label),
+            ]:
+                self._add_form_row(ctp_form, label, widget)
+
+            for label, widget, unit in [
+                ("PCD", self.ctp_pcd, "mm"),
+                ("Screw number", self.ctp_screw_count, "pcs"),
+                ("Continuous torque", self.ctp_cont_torque, "N*m"),
+                ("Peak factor", self.ctp_peak_factor, "x"),
+                ("Momentary factor", self.ctp_momentary_factor, "x"),
+                ("Tightening torque", self.ctp_tightening_torque, "N*m"),
+                ("% tensile yield", self.ctp_percent_tys, "%"),
+                ("Sleeve OD", self.ctp_sleeve_od, "mm"),
+                ("Sleeve yield", self.ctp_sleeve_yield, "MPa"),
+                ("Leverarm", self.ctp_leverarm, "mm"),
+                ("Groove diameter", self.ctp_groove_diameter, "mm"),
+                ("Contact diameter", self.ctp_contact_diameter, "mm"),
+                ("Thread engagement", self.ctp_thread_engagement, "mm"),
+                ("Custom screw mu", self.ctp_custom_screw_mu, "mu"),
+                ("Custom nut mu", self.ctp_custom_nut_mu, "mu"),
+                ("Custom part mu", self.ctp_custom_part_mu, "mu"),
+            ]:
+                row = QWidget()
+                row_layout = QHBoxLayout(row)
+                row_layout.setContentsMargins(0, 0, 0, 0)
+                row_layout.addWidget(widget, 1)
+                unit_label = QLabel(unit)
+                unit_label.setObjectName("unitLabel")
+                unit_label.setFixedWidth(56)
+                row_layout.addWidget(unit_label)
+                self._add_form_row(ctp_form, label, row)
+
+            layout.addWidget(self.ctp_group)
             button = QPushButton("Calculate")
             button.clicked.connect(self.update_calculation)
             layout.addWidget(button)
@@ -399,11 +525,54 @@ def run_gui() -> int:
                     widget.currentTextChanged.connect(self.update_calculation)
                 else:
                     widget.valueChanged.connect(self.update_calculation)
-            return frame
+            for widget in [
+                self.ctp_type,
+                self.ctp_size,
+                self.ctp_material,
+                self.ctp_shear_plane,
+                self.ctp_screw_mu_label,
+                self.ctp_nut_mu_label,
+                self.ctp_part_mu_label,
+                self.ctp_pcd,
+                self.ctp_screw_count,
+                self.ctp_cont_torque,
+                self.ctp_peak_factor,
+                self.ctp_momentary_factor,
+                self.ctp_tightening_torque,
+                self.ctp_percent_tys,
+                self.ctp_sleeve_od,
+                self.ctp_sleeve_yield,
+                self.ctp_leverarm,
+                self.ctp_groove_diameter,
+                self.ctp_contact_diameter,
+                self.ctp_thread_engagement,
+                self.ctp_custom_screw_mu,
+                self.ctp_custom_nut_mu,
+                self.ctp_custom_part_mu,
+            ]:
+                if isinstance(widget, QComboBox):
+                    widget.currentTextChanged.connect(self.update_calculation)
+                else:
+                    widget.valueChanged.connect(self.update_calculation)
+            self.ctp_type.currentTextChanged.connect(self._sync_ctp_sizes)
+            self.mode.currentTextChanged.connect(self._update_mode_visibility)
+            self._update_mode_visibility()
+            return scroll
+
+        def _configure_form(self, form: QFormLayout) -> None:
+            form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
+            form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
+            form.setHorizontalSpacing(14)
+            form.setVerticalSpacing(10)
 
         def _add_form_row(self, form: QFormLayout, label: str, widget: QWidget) -> None:
             label_widget = QLabel(label)
             label_widget.setObjectName("formLabel")
+            label_widget.setMinimumWidth(150)
+            if isinstance(widget, (QComboBox, QDoubleSpinBox, QSpinBox)):
+                widget.setMinimumWidth(190)
+            else:
+                widget.setMinimumWidth(240)
             form.addRow(label_widget, widget)
 
         def _double(self, value: float, minimum: float, maximum: float, decimals: int) -> QDoubleSpinBox:
@@ -422,6 +591,53 @@ def run_gui() -> int:
             box.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
             return box
 
+        def _is_ctp_mode(self) -> bool:
+            return self.mode.currentText().startswith("CTP")
+
+        def _sync_ctp_sizes(self) -> None:
+            current = self.ctp_size.currentText()
+            sizes = list_ctp_sizes(self.ctp_type.currentText(), self.ctp_data)
+            self.ctp_size.blockSignals(True)
+            self.ctp_size.clear()
+            self.ctp_size.addItems(sizes)
+            if current in sizes:
+                self.ctp_size.setCurrentText(current)
+            self.ctp_size.blockSignals(False)
+            if sizes:
+                self._apply_ctp_variant_defaults()
+            if hasattr(self, "status"):
+                self.update_calculation()
+
+        def _apply_ctp_variant_defaults(self) -> None:
+            try:
+                variant = self.ctp_data["bolt_variants"][0]
+                for candidate in self.ctp_data["bolt_variants"]:
+                    if (
+                        candidate["type_code"] == self.ctp_type.currentText()
+                        and candidate["size_code"] == self.ctp_size.currentText()
+                    ):
+                        variant = candidate
+                        break
+                self.ctp_contact_diameter.setValue(float(variant["contact_diameter_mm"]))
+                self.ctp_groove_diameter.setValue(float(variant["groove_diameter_mm"]))
+            except Exception:
+                return
+
+        def _update_mode_visibility(self) -> None:
+            ctp_mode = self._is_ctp_mode()
+            self.simple_group.setVisible(not ctp_mode)
+            self.ctp_group.setVisible(ctp_mode)
+            if hasattr(self, "diagram"):
+                self.diagram.setVisible(not ctp_mode)
+            if hasattr(self, "ctp_summary"):
+                self.ctp_summary.setVisible(ctp_mode)
+            for key in self.simple_card_keys:
+                self.cards[key].setVisible(not ctp_mode)
+            for key in self.ctp_card_keys:
+                self.cards[key].setVisible(ctp_mode)
+            if hasattr(self, "status"):
+                self.update_calculation()
+
         def _build_workbench(self) -> QWidget:
             frame = QFrame()
             frame.setObjectName("workbench")
@@ -432,6 +648,7 @@ def run_gui() -> int:
             eyebrow.setObjectName("eyebrow")
             title = QLabel("Torque transmission by friction between flanges")
             title.setObjectName("title")
+            title.setWordWrap(True)
             self.spec = QLabel("")
             self.spec.setObjectName("spec")
             text.addWidget(eyebrow)
@@ -439,11 +656,19 @@ def run_gui() -> int:
             text.addWidget(self.spec)
             self.status = QLabel("OK")
             self.status.setObjectName("status")
-            top.addLayout(text)
-            top.addWidget(self.status)
+            self.status.setFixedSize(116, 52)
+            self.status.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            top.addLayout(text, 1)
+            top.addWidget(self.status, 0, Qt.AlignmentFlag.AlignTop)
             layout.addLayout(top)
             self.diagram = DiagramWidget()
             layout.addWidget(self.diagram, 1)
+            self.ctp_summary = QLabel("")
+            self.ctp_summary.setObjectName("ctpSummary")
+            self.ctp_summary.setWordWrap(True)
+            self.ctp_summary.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+            self.ctp_summary.setVisible(False)
+            layout.addWidget(self.ctp_summary, 1)
             return frame
 
         def _build_results(self) -> QWidget:
@@ -456,7 +681,7 @@ def run_gui() -> int:
             title = QLabel("Results")
             title.setObjectName("resultsTitle")
             layout.addWidget(title)
-            for title_text, key in [
+            simple_cards = [
                 ("Slip safety factor", "slip_sf"),
                 ("Slip torque capacity", "slip_capacity"),
                 ("Design torque demand", "design_torque"),
@@ -468,7 +693,23 @@ def run_gui() -> int:
                 ("Bolt yield load", "yield_load"),
                 ("Assembly yield utilization", "assembly_util"),
                 ("Service yield utilization", "service_util"),
-            ]:
+            ]
+            ctp_cards = [
+                ("Minimum safety factor", "ctp_min_sf"),
+                ("Axial pretension", "ctp_preload"),
+                ("Tightening torque", "ctp_tightening"),
+                ("Flange friction torque", "ctp_friction_torque"),
+                ("Continuous torque ratio", "ctp_cont_ratio"),
+                ("Peak torque ratio", "ctp_peak_ratio"),
+                ("Momentary torque ratio", "ctp_momentary_ratio"),
+                ("Momentary residual shear", "ctp_momentary_shear"),
+                ("Momentary bolt SF", "ctp_momentary_bolt_sf"),
+                ("Thread root SF", "ctp_thread_root_sf"),
+                ("First thread stress", "ctp_thread_pullout"),
+            ]
+            self.simple_card_keys = [key for _title, key in simple_cards]
+            self.ctp_card_keys = [key for _title, key in ctp_cards]
+            for title_text, key in simple_cards + ctp_cards:
                 card = ResultCard(title_text)
                 self.cards[key] = card
                 layout.addWidget(card)
@@ -503,7 +744,61 @@ def run_gui() -> int:
                 standard_profile=self.profile_keys_by_label[self.standard_profile.currentText()],
             )
 
+        def ctp_inputs(self) -> CTPInputs:
+            type_code = self.ctp_type.currentText()
+            size_code = self.ctp_size.currentText()
+            material_code = self.ctp_material.currentText()
+            geometry = build_ctp_geometry(
+                type_code=type_code,
+                size_code=size_code,
+                pcd_mm=self.ctp_pcd.value(),
+                screw_count=self.ctp_screw_count.value(),
+                shear_plane=self.ctp_shear_plane.currentText(),
+                leverarm_mm=self.ctp_leverarm.value(),
+                groove_diameter_mm=self.ctp_groove_diameter.value(),
+                contact_diameter_mm=self.ctp_contact_diameter.value(),
+                data=self.ctp_data,
+            )
+            friction = build_ctp_friction(
+                screw_nut_label=self.ctp_screw_mu_label.currentText(),
+                nut_part_label=self.ctp_nut_mu_label.currentText(),
+                part_part_label=self.ctp_part_mu_label.currentText(),
+                custom_screw_nut_mu=self.ctp_custom_screw_mu.value(),
+                custom_nut_part_mu=self.ctp_custom_nut_mu.value(),
+                custom_part_part_mu=self.ctp_custom_part_mu.value(),
+                data=self.ctp_data,
+            )
+            tightening_torque = self.ctp_tightening_torque.value()
+            preload_percent = self.ctp_percent_tys.value()
+            thread_engagement = self.ctp_thread_engagement.value()
+            return CTPInputs(
+                reference=self.ctp_data["default"]["reference"],
+                geometry=geometry,
+                material=get_ctp_material(material_code, self.ctp_data),
+                friction=friction,
+                continuous_torque_nm=self.ctp_cont_torque.value(),
+                peak_factor=self.ctp_peak_factor.value(),
+                momentary_factor=self.ctp_momentary_factor.value(),
+                tightening_torque_nm=tightening_torque if tightening_torque else None,
+                preload_percent_of_yield=preload_percent if preload_percent else None,
+                standard_tightening_torque_nm=standard_tightening_torque_nm(
+                    type_code,
+                    size_code,
+                    material_code,
+                    self.ctp_data,
+                ),
+                sleeve_outer_diameter_mm=self.ctp_sleeve_od.value(),
+                sleeve_yield_strength_mpa=self.ctp_sleeve_yield.value(),
+                thread_engagement_mm=thread_engagement if thread_engagement else None,
+            )
+
         def update_calculation(self) -> None:
+            if self._is_ctp_mode():
+                self._update_ctp_calculation()
+            else:
+                self._update_simple_calculation()
+
+        def _update_simple_calculation(self) -> None:
             try:
                 bolt = get_bolt_size(self.conn, self.bolt_size.currentText())
                 prop = get_property_class(self.conn, self.property_class.currentText())
@@ -553,31 +848,135 @@ def run_gui() -> int:
                 f"{rec_text}\n\nStandards basis:\n{standard_text}\n\nChecks:\n{checks_text}"
             )
 
+        def _update_ctp_calculation(self) -> None:
+            try:
+                inputs = self.ctp_inputs()
+                result = calculate_ctp(inputs)
+            except Exception as exc:
+                QMessageBox.warning(self, "Input error", str(exc))
+                return
+
+            geometry = inputs.geometry
+            self.spec.setText(
+                f"CTP {geometry.type_code} {geometry.size_code} | M{result.thread_diameter_mm:g} x "
+                f"{result.pitch_mm:g} | {inputs.material.code}, yield {inputs.material.yield_strength_mpa:g} MPa"
+            )
+            has_warning = result.warnings[0] != "All CTP 0007 checks pass."
+            self.status.setText("OK" if not has_warning else "Check")
+            self.status.setProperty("warning", has_warning)
+            self.status.style().unpolish(self.status)
+            self.status.style().polish(self.status)
+            self.diagram.setVisible(False)
+            self.ctp_summary.setVisible(True)
+            self.ctp_summary.setText(self._ctp_summary_text(result))
+
+            continuous = result.case("continuous")
+            peak = result.case("peak")
+            momentary = result.case("momentary")
+            self.cards["ctp_min_sf"].set_value(
+                self._format_optional(result.minimum_safety_factor, "", 3),
+                (result.minimum_safety_factor or 0) < 1.0,
+            )
+            self.cards["ctp_preload"].set_value(f"{result.preload_n:,.0f} N")
+            self.cards["ctp_tightening"].set_value(f"{result.tightening_torque_nm:,.1f} N*m")
+            self.cards["ctp_friction_torque"].set_value(f"{result.friction_torque_nm:,.0f} N*m")
+            self.cards["ctp_cont_ratio"].set_value(self._format_status(continuous.torque_ratio, 3), (continuous.torque_ratio.value or 0) < 1)
+            self.cards["ctp_peak_ratio"].set_value(self._format_status(peak.torque_ratio, 3), (peak.torque_ratio.value or 0) < 1)
+            self.cards["ctp_momentary_ratio"].set_value(self._format_status(momentary.torque_ratio, 3), (momentary.torque_ratio.value or 0) < 1)
+            self.cards["ctp_momentary_shear"].set_value(f"{momentary.residual_shear_load_n:,.0f} N")
+            self.cards["ctp_momentary_bolt_sf"].set_value(
+                self._format_status(momentary.bolt_safety_factor, 3),
+                (momentary.bolt_safety_factor.value or 0) < 1.1,
+            )
+            self.cards["ctp_thread_root_sf"].set_value(
+                self._format_status(result.thread_root_safety_factor, 3),
+                (result.thread_root_safety_factor.value or 0) < 1.1,
+            )
+            self.cards["ctp_thread_pullout"].set_value(f"{result.first_thread_pullout_stress_mpa:,.1f} MPa")
+            self.checks.setText(result.check_summary + "\n\n" + "\n".join(f"- {item}" for item in result.warnings))
+
+        def _format_optional(self, value: float | None, unit: str = "", decimals: int = 1) -> str:
+            if value is None:
+                return "--"
+            suffix = f" {unit}" if unit else ""
+            return f"{value:,.{decimals}f}{suffix}"
+
+        def _format_status(self, value: StatusValue, decimals: int = 3) -> str:
+            if value.value is None:
+                return value.status or "--"
+            return f"{value.value:,.{decimals}f}"
+
+        def _ctp_summary_text(self, result: CTPResult) -> str:
+            rows = [
+                "CTP 0007 cached-formula replica",
+                "",
+                f"Reference: {result.inputs.reference}",
+                f"Pitch diameter d2: {result.pitch_diameter_mm:.3f} mm",
+                f"Thread root d3: {result.thread_root_diameter_mm:.3f} mm",
+                f"Tensile stress area: {result.tensile_stress_area_mm2:.3f} mm2",
+                f"Average nut radius: {result.average_nut_radius_mm:.3f} mm",
+                "",
+                "Torque cases:",
+            ]
+            for case in result.cases:
+                rows.append(
+                    f"{case.name.title()}: demand {case.torque_nm:,.0f} N*m, "
+                    f"ratio {self._format_status(case.torque_ratio, 3)}, "
+                    f"residual shear {case.residual_shear_load_n:,.0f} N, "
+                    f"bolt SF {self._format_status(case.bolt_safety_factor, 3)}, "
+                    f"sleeve SF {self._format_status(case.sleeve_safety_factor, 3)}"
+                )
+            rows.extend(
+                [
+                    "",
+                    f"Thread root Von Mises: {result.thread_root_von_mises_mpa:,.1f} MPa",
+                    f"First thread pull-out stress: {result.first_thread_pullout_stress_mpa:,.1f} MPa",
+                    f"Check summary: {result.check_summary}",
+                ]
+            )
+            return "\n".join(rows)
+
     app = QApplication(sys.argv)
     app.setStyleSheet(
         """
         QWidget { background: #e8eef0; color: #142126; font-family: Arial; }
-        #inputRail { background: #1d252b; border-radius: 6px; }
-        #railTitle { background: #1d252b; color: white; font-size: 20px; font-weight: 800; padding: 8px 0 14px; }
-        #formLabel { background: #1d252b; color: #dce7e9; font-size: 12px; font-weight: 800; }
-        #unitLabel { background: #1d252b; color: #aebec3; min-width: 48px; }
+        #inputScroll { background: #f6fafb; border: 1px solid #cdd8dc; border-radius: 6px; }
+        #inputRail { background: #f6fafb; border-radius: 6px; }
+        #railTitle { background: #f6fafb; color: #142126; font-size: 20px; font-weight: 850; padding: 8px 4px 10px; }
+        #formLabel { background: transparent; color: #314248; font-size: 12px; font-weight: 800; padding: 0; }
+        #unitLabel { background: transparent; color: #5d7078; font-size: 12px; font-weight: 700; padding-left: 6px; }
         QComboBox, QDoubleSpinBox, QSpinBox {
-            background: #273137; color: white; border: 1px solid #435058; border-radius: 5px; min-height: 28px; padding: 0 8px;
+            background: #ffffff;
+            color: #142126;
+            border: 1px solid #aebec3;
+            border-radius: 5px;
+            min-height: 30px;
+            padding: 0 9px;
+            selection-background-color: #cce9e7;
+            selection-color: #142126;
+        }
+        QComboBox QAbstractItemView {
+            background: #ffffff;
+            color: #142126;
+            border: 1px solid #8fa2a8;
+            selection-background-color: #cce9e7;
+            selection-color: #142126;
         }
         QPushButton { background: #0c8279; color: white; border: 0; border-radius: 5px; min-height: 38px; font-weight: 800; }
         #workbench, #results { background: #fbfdfe; border: 1px solid #cdd8dc; border-radius: 6px; }
         #eyebrow { color: #5d7078; font-size: 12px; font-weight: 800; }
         #title { color: #142126; font-size: 23px; font-weight: 850; }
         #spec { color: #5d7078; font-weight: 700; }
-        #status { background: #0c8279; color: white; border-radius: 5px; padding: 9px 18px; font-weight: 850; min-width: 70px; qproperty-alignment: AlignCenter; }
+        #status { background: #0c8279; color: white; border-radius: 6px; padding: 0; font-weight: 850; min-width: 70px; qproperty-alignment: AlignCenter; }
         #status[warning="true"] { background: #d68b18; }
+        #ctpSummary { background: #ffffff; color: #26383f; border: 1px solid #d1dcdf; border-radius: 6px; padding: 14px; font-family: Menlo; font-size: 12px; }
         #resultsTitle { background: white; color: #142126; font-size: 22px; font-weight: 850; padding-bottom: 6px; }
         #card { background: #fbfcfc; border: 1px solid #cdd8dc; border-radius: 6px; }
         #metricTitle { background: #fbfcfc; color: #5d7078; font-size: 11px; font-weight: 850; }
         #metricValue { background: #fbfcfc; color: #0c8279; font-family: Menlo; font-size: 21px; font-weight: 850; }
         #metricValue[danger="true"] { color: #b9322e; }
-        QGroupBox { background: #f2f6f7; border: 1px solid #cdd8dc; border-radius: 6px; margin-top: 12px; font-weight: 800; }
-        QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 4px; }
+        QGroupBox { background: #ffffff; color: #142126; border: 1px solid #cdd8dc; border-radius: 6px; margin-top: 16px; padding: 12px 10px 10px; font-weight: 800; }
+        QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 6px; background: #f6fafb; color: #314248; }
         """
     )
     window = MainWindow()
