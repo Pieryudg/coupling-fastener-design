@@ -78,6 +78,9 @@ bolt/sleeve stress status, thread-root assembly stress, first-thread
 pull-out stress, and the combined check summary. Engineering-equivalent
 Goal Seek helpers are implemented in the pure calculation module.
 
+Full formula derivations are documented in
+[`docs/formula_derivations.md`](docs/formula_derivations.md).
+
 Optional Windows `.exe` build, from PowerShell on Windows:
 
 ```powershell
