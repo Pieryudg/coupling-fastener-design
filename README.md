@@ -72,6 +72,10 @@ The seed is stored at:
 data/ctp_0007_seed.json
 ```
 
+It includes the standard Type/Size lookup variants extracted from the
+hidden `Données Vis` sheet, so the CTP Type and Size dropdowns expose the
+workbook's standard selections rather than only the default case.
+
 The CTP mode covers the Phase 1 direct formula chain from the workbook:
 tightening torque to preload, flange friction torque, residual shear,
 bolt/sleeve stress status, thread-root assembly stress, first-thread

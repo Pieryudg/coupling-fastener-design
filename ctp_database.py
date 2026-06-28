@@ -24,16 +24,16 @@ def load_ctp_data(path: Path = CTP_DATA_PATH) -> dict[str, Any]:
 
 def list_ctp_bolt_types(data: dict[str, Any] | None = None) -> list[str]:
     payload = data or load_ctp_data()
-    return sorted({row["type_code"] for row in payload["bolt_variants"]})
+    return _unique_in_order(row["type_code"] for row in payload["bolt_variants"])
 
 
 def list_ctp_sizes(type_code: str, data: dict[str, Any] | None = None) -> list[str]:
     payload = data or load_ctp_data()
-    return [
+    return _unique_in_order(
         row["size_code"]
         for row in payload["bolt_variants"]
         if row["type_code"] == type_code
-    ]
+    )
 
 
 def list_ctp_materials(data: dict[str, Any] | None = None) -> list[str]:
@@ -44,6 +44,16 @@ def list_ctp_materials(data: dict[str, Any] | None = None) -> list[str]:
 def list_ctp_friction_labels(data: dict[str, Any] | None = None) -> list[str]:
     payload = data or load_ctp_data()
     return [row["label"] for row in payload["friction_factors"]]
+
+
+def _unique_in_order(values) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for value in values:
+        if value not in seen:
+            seen.add(value)
+            result.append(value)
+    return result
 
 
 def get_ctp_variant(

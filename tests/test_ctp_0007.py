@@ -19,7 +19,9 @@ from ctp_database import (  # noqa: E402
     default_ctp_inputs,
     get_ctp_material,
     get_ctp_variant,
+    list_ctp_bolt_types,
     list_ctp_friction_labels,
+    list_ctp_sizes,
     standard_tightening_torque_nm,
 )
 
@@ -66,6 +68,18 @@ class CTP0007Tests(unittest.TestCase):
             365.0,
         )
         self.assertIn("API 671", list_ctp_friction_labels())
+
+    def test_lookup_seed_exposes_hidden_workbook_type_and_size_lists(self):
+        types = list_ctp_bolt_types()
+        sizes_1512 = list_ctp_sizes("1512")
+
+        self.assertEqual(len(types), 9)
+        self.assertIn("1512", types)
+        self.assertIn("1442", types)
+        self.assertEqual(len(sizes_1512), 20)
+        self.assertIn("04xx", sizes_1512)
+        self.assertIn("75xx", sizes_1512)
+        self.assertEqual(sizes_1512.count("47xx"), 1)
 
     def test_custom_friction_and_torque_input_take_precedence(self):
         base = default_ctp_inputs()

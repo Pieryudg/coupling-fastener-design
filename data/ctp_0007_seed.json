@@ -1,6 +1,6 @@
 {
-  "version": "ctp_0007_seed_v1",
-  "source": "CTP 0007.xltx cached values audited from CTP 0007 and Donnees Vis",
+  "version": "ctp_0007_seed_v2",
+  "source": "CTP 0007.xltx cached values audited from CTP 0007 and Donnees Vis; standard bolt variants extracted from Données Vis!B3:X167",
   "default": {
     "reference": "TSKW/0360/KA/GA253480 Hub Bolts",
     "bolt_type_code": "1512",
@@ -12,37 +12,2578 @@
   },
   "bolt_variants": [
     {
-      "type_code": "1512",
-      "size_code": "47xx",
+      "type_code": "1825",
+      "size_code": "0100",
+      "thread_diameter_mm": 9.525,
+      "pitch_mm": 1.058,
+      "shank_diameter_mm": 9.487,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 15.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 25.8
+      },
+      "source_row": 3
+    },
+    {
+      "type_code": "1825",
+      "size_code": "0101",
+      "thread_diameter_mm": 9.525,
+      "pitch_mm": 1.058,
+      "shank_diameter_mm": 9.487,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 15.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 25.8
+      },
+      "source_row": 4
+    },
+    {
+      "type_code": "1825",
+      "size_code": "0102",
+      "thread_diameter_mm": 15.875,
+      "pitch_mm": 1.411,
+      "shank_diameter_mm": 15.824,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 25.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 203.0
+      },
+      "source_row": 5
+    },
+    {
+      "type_code": "1825",
+      "size_code": "0103",
+      "thread_diameter_mm": 15.875,
+      "pitch_mm": 1.411,
+      "shank_diameter_mm": 15.824,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 25.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 203.0
+      },
+      "source_row": 6
+    },
+    {
+      "type_code": "1825",
+      "size_code": "0104",
+      "thread_diameter_mm": 9.525,
+      "pitch_mm": 1.058,
+      "shank_diameter_mm": 9.487,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 15.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 25.8
+      },
+      "source_row": 7
+    },
+    {
+      "type_code": "1825",
+      "size_code": "0105",
+      "thread_diameter_mm": 15.875,
+      "pitch_mm": 1.411,
+      "shank_diameter_mm": 15.824,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 25.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 203.0
+      },
+      "source_row": 8
+    },
+    {
+      "type_code": "1825",
+      "size_code": "0106",
+      "thread_diameter_mm": 9.525,
+      "pitch_mm": 1.058,
+      "shank_diameter_mm": 9.487,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 15.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 25.8
+      },
+      "source_row": 9
+    },
+    {
+      "type_code": "1825",
+      "size_code": "0107",
+      "thread_diameter_mm": 19.05,
+      "pitch_mm": 1.587,
+      "shank_diameter_mm": 18.999,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 30.4,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 203.0
+      },
+      "source_row": 10
+    },
+    {
+      "type_code": "1825",
+      "size_code": "0108",
+      "thread_diameter_mm": 14.287,
+      "pitch_mm": 1.411,
+      "shank_diameter_mm": 14.237,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 23.0,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 81.3
+      },
+      "source_row": 11
+    },
+    {
+      "type_code": "1825",
+      "size_code": "0109",
+      "thread_diameter_mm": 12.7,
+      "pitch_mm": 1.27,
+      "shank_diameter_mm": 12.662,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 21.1,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 81.3
+      },
+      "source_row": 12
+    },
+    {
+      "type_code": "1825",
+      "size_code": "0110",
+      "thread_diameter_mm": 12.7,
+      "pitch_mm": 1.27,
+      "shank_diameter_mm": 12.662,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 21.1,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 81.3
+      },
+      "source_row": 13
+    },
+    {
+      "type_code": "1825",
+      "size_code": "0111",
+      "thread_diameter_mm": 9.525,
+      "pitch_mm": 1.058,
+      "shank_diameter_mm": 9.487,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 15.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 25.8
+      },
+      "source_row": 14
+    },
+    {
+      "type_code": "1825",
+      "size_code": "0112",
+      "thread_diameter_mm": 9.525,
+      "pitch_mm": 1.058,
+      "shank_diameter_mm": 9.487,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 15.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 25.8
+      },
+      "source_row": 15
+    },
+    {
+      "type_code": "1825",
+      "size_code": "0113",
+      "thread_diameter_mm": 7.937,
+      "pitch_mm": 1.058,
+      "shank_diameter_mm": 7.899,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 13.1,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 10.8
+      },
+      "source_row": 16
+    },
+    {
+      "type_code": "1825",
+      "size_code": "0114",
+      "thread_diameter_mm": 6.35,
+      "pitch_mm": 0.907,
+      "shank_diameter_mm": 6.312,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 10.5,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 10.8
+      },
+      "source_row": 17
+    },
+    {
+      "type_code": "1825",
+      "size_code": "0115",
+      "thread_diameter_mm": 15.875,
+      "pitch_mm": 1.411,
+      "shank_diameter_mm": 15.824,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 25.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 203.0
+      },
+      "source_row": 18
+    },
+    {
+      "type_code": "1825",
+      "size_code": "0116",
+      "thread_diameter_mm": 7.937,
+      "pitch_mm": 1.058,
+      "shank_diameter_mm": 7.899,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 13.1,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 10.8
+      },
+      "source_row": 19
+    },
+    {
+      "type_code": "1825",
+      "size_code": "0117",
+      "thread_diameter_mm": 12.7,
+      "pitch_mm": 1.27,
+      "shank_diameter_mm": 12.662,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 21.1,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 81.3
+      },
+      "source_row": 20
+    },
+    {
+      "type_code": "1825",
+      "size_code": "0118",
+      "thread_diameter_mm": 15.875,
+      "pitch_mm": 1.411,
+      "shank_diameter_mm": 15.824,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 25.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 203.0
+      },
+      "source_row": 21
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0100",
+      "thread_diameter_mm": 6.0,
+      "pitch_mm": 1.0,
+      "shank_diameter_mm": 5.965,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 9.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 14.0
+      },
+      "source_row": 22
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0101",
+      "thread_diameter_mm": 8.0,
+      "pitch_mm": 1.25,
+      "shank_diameter_mm": 7.962,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 12.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 30.0
+      },
+      "source_row": 23
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0102",
+      "thread_diameter_mm": 8.0,
+      "pitch_mm": 1.25,
+      "shank_diameter_mm": 7.962,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 12.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 30.0
+      },
+      "source_row": 24
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0103",
+      "thread_diameter_mm": 10.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 9.962,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 15.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 55.0
+      },
+      "source_row": 25
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0104",
+      "thread_diameter_mm": 12.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 11.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 18.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 95.0
+      },
+      "source_row": 26
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0105",
+      "thread_diameter_mm": 12.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 11.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 18.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 95.0
+      },
+      "source_row": 27
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0106",
+      "thread_diameter_mm": 14.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 13.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 22.3,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 160.0
+      },
+      "source_row": 28
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0107",
+      "thread_diameter_mm": 14.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 13.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 22.3,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 160.0
+      },
+      "source_row": 29
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0108",
+      "thread_diameter_mm": 16.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 15.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 25.3,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 220.0
+      },
+      "source_row": 30
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0109",
+      "thread_diameter_mm": 16.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 15.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 25.3,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 220.0
+      },
+      "source_row": 31
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0110",
+      "thread_diameter_mm": 18.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 17.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 28.3,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 270.0
+      },
+      "source_row": 32
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0111",
+      "thread_diameter_mm": 20.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 19.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 31.3,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 370.0
+      },
+      "source_row": 33
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0112",
+      "thread_diameter_mm": 20.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 19.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 31.3,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 370.0
+      },
+      "source_row": 34
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0113",
+      "thread_diameter_mm": 22.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 21.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 34.3,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 500.0
+      },
+      "source_row": 35
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0114",
+      "thread_diameter_mm": 24.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 23.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 38.3,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 630.0
+      },
+      "source_row": 36
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0115",
+      "thread_diameter_mm": 24.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 23.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 38.3,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 630.0
+      },
+      "source_row": 37
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0116",
+      "thread_diameter_mm": 27.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 26.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 43.0,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {},
+      "source_row": 38
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0117",
+      "thread_diameter_mm": 33.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 32.95,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 52.0,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 1730.0
+      },
+      "source_row": 39
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0118",
+      "thread_diameter_mm": 36.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 35.95,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 57.0,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 2200.0
+      },
+      "source_row": 40
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0119",
+      "thread_diameter_mm": 36.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 35.95,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 57.0,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 2200.0
+      },
+      "source_row": 41
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0120",
+      "thread_diameter_mm": 12.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 11.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 18.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 95.0
+      },
+      "source_row": 42
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0121",
+      "thread_diameter_mm": 14.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 13.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 22.3,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 160.0
+      },
+      "source_row": 43
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0122",
+      "thread_diameter_mm": 6.0,
+      "pitch_mm": 1.0,
+      "shank_diameter_mm": 5.965,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 9.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 14.0
+      },
+      "source_row": 44
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0123",
+      "thread_diameter_mm": 8.0,
+      "pitch_mm": 1.25,
+      "shank_diameter_mm": 7.962,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 12.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 30.0
+      },
+      "source_row": 45
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0124",
+      "thread_diameter_mm": 10.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 9.962,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 15.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 55.0
+      },
+      "source_row": 46
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0125",
+      "thread_diameter_mm": 12.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 11.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 18.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 95.0
+      },
+      "source_row": 47
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0126",
+      "thread_diameter_mm": 6.0,
+      "pitch_mm": 1.0,
+      "shank_diameter_mm": 5.965,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 9.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 14.0
+      },
+      "source_row": 48
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0127",
+      "thread_diameter_mm": 12.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 11.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 18.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 95.0
+      },
+      "source_row": 49
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0128",
+      "thread_diameter_mm": 16.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 15.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 25.3,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 220.0
+      },
+      "source_row": 50
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0129",
+      "thread_diameter_mm": 10.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 9.962,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 15.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 55.0
+      },
+      "source_row": 51
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0130",
+      "thread_diameter_mm": 36.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 35.95,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 57.0,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 2200.0
+      },
+      "source_row": 52
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0131",
+      "thread_diameter_mm": 6.0,
+      "pitch_mm": 1.0,
+      "shank_diameter_mm": 5.965,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 9.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 14.0
+      },
+      "source_row": 53
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0132",
+      "thread_diameter_mm": 6.0,
+      "pitch_mm": 1.0,
+      "shank_diameter_mm": 5.965,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 9.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 14.0
+      },
+      "source_row": 54
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0133",
+      "thread_diameter_mm": 6.0,
+      "pitch_mm": 1.0,
+      "shank_diameter_mm": 5.965,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 9.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 14.0
+      },
+      "source_row": 55
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0134",
+      "thread_diameter_mm": 8.0,
+      "pitch_mm": 1.25,
+      "shank_diameter_mm": 7.962,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 12.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 30.0
+      },
+      "source_row": 56
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0135",
+      "thread_diameter_mm": 12.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 11.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 18.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 95.0
+      },
+      "source_row": 57
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0136",
+      "thread_diameter_mm": 16.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 15.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 25.3,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 220.0
+      },
+      "source_row": 58
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0137",
+      "thread_diameter_mm": 18.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 17.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 28.3,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 270.0
+      },
+      "source_row": 59
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0138",
+      "thread_diameter_mm": 20.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 19.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 31.3,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 370.0
+      },
+      "source_row": 60
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0139",
+      "thread_diameter_mm": 22.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 21.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 34.3,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 500.0
+      },
+      "source_row": 61
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0140",
+      "thread_diameter_mm": 22.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 21.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 34.3,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 500.0
+      },
+      "source_row": 62
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0141",
+      "thread_diameter_mm": 24.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 23.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 38.3,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 630.0
+      },
+      "source_row": 63
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0142",
+      "thread_diameter_mm": 30.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 29.95,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 49.0,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 1290.0
+      },
+      "source_row": 64
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0143",
+      "thread_diameter_mm": 33.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 32.95,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 52.0,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 1730.0
+      },
+      "source_row": 65
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0144",
+      "thread_diameter_mm": 36.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 35.95,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 57.0,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 2200.0
+      },
+      "source_row": 66
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0145",
+      "thread_diameter_mm": 36.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 35.95,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 57.0,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 2200.0
+      },
+      "source_row": 67
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0146",
+      "thread_diameter_mm": 20.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 19.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 31.3,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 370.0
+      },
+      "source_row": 68
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0147",
+      "thread_diameter_mm": 6.0,
+      "pitch_mm": 1.0,
+      "shank_diameter_mm": 5.965,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 9.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 14.0
+      },
+      "source_row": 69
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0148",
+      "thread_diameter_mm": 8.0,
+      "pitch_mm": 1.25,
+      "shank_diameter_mm": 7.962,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 12.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 30.0
+      },
+      "source_row": 70
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0149",
+      "thread_diameter_mm": 12.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 11.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 18.8,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 95.0
+      },
+      "source_row": 71
+    },
+    {
+      "type_code": "1828",
+      "size_code": "0150",
+      "thread_diameter_mm": 16.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 15.959,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 25.3,
+      "thread_type": "Rolled",
+      "standard_tightening_torque_nm": {
+        "1052 (High T.steel)": 220.0
+      },
+      "source_row": 72
+    },
+    {
+      "type_code": "1121",
+      "size_code": "0011",
+      "thread_diameter_mm": 6.0,
+      "pitch_mm": 1.0,
+      "shank_diameter_mm": 5.99,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 9.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0435 (EN17/24T)": 11.0,
+        "0336 (42CrMo4)": 11.0
+      },
+      "source_row": 73
+    },
+    {
+      "type_code": "1121",
+      "size_code": "0027",
+      "thread_diameter_mm": 8.0,
+      "pitch_mm": 1.25,
+      "shank_diameter_mm": 7.99,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 12.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0435 (EN17/24T)": 23.0,
+        "0336 (42CrMo4)": 23.0
+      },
+      "source_row": 74
+    },
+    {
+      "type_code": "1121",
+      "size_code": "0060",
+      "thread_diameter_mm": 10.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 9.99,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 15.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0435 (EN17/24T)": 47.0,
+        "0336 (42CrMo4)": 47.0
+      },
+      "source_row": 75
+    },
+    {
+      "type_code": "1121",
+      "size_code": "0110",
+      "thread_diameter_mm": 12.0,
+      "pitch_mm": 1.75,
+      "shank_diameter_mm": 11.99,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 18.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0435 (EN17/24T)": 75.0,
+        "0336 (42CrMo4)": 75.0
+      },
+      "source_row": 76
+    },
+    {
+      "type_code": "1121",
+      "size_code": "0180",
+      "thread_diameter_mm": 14.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 13.99,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 21.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0435 (EN17/24T)": 130.0,
+        "0336 (42CrMo4)": 130.0
+      },
+      "source_row": 77
+    },
+    {
+      "type_code": "1121",
+      "size_code": "0260",
       "thread_diameter_mm": 16.0,
       "pitch_mm": 2.0,
-      "shank_diameter_mm": 8.0,
+      "shank_diameter_mm": 15.99,
       "groove_diameter_mm": 0.0,
       "contact_diameter_mm": 24.0,
       "thread_type": "Machined",
       "standard_tightening_torque_nm": {
-        "0225 (Classe 12-9)": 365.0
-      }
+        "0435 (EN17/24T)": 150.0,
+        "0336 (42CrMo4)": 150.0
+      },
+      "source_row": 78
+    },
+    {
+      "type_code": "1121",
+      "size_code": "0400",
+      "thread_diameter_mm": 18.0,
+      "pitch_mm": 2.5,
+      "shank_diameter_mm": 17.99,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 27.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0435 (EN17/24T)": 210.0,
+        "0336 (42CrMo4)": 210.0
+      },
+      "source_row": 79
+    },
+    {
+      "type_code": "1121",
+      "size_code": "0560",
+      "thread_diameter_mm": 20.0,
+      "pitch_mm": 2.5,
+      "shank_diameter_mm": 19.99,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 30.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0435 (EN17/24T)": 280.0,
+        "0336 (42CrMo4)": 280.0
+      },
+      "source_row": 80
+    },
+    {
+      "type_code": "1121",
+      "size_code": "0750",
+      "thread_diameter_mm": 22.0,
+      "pitch_mm": 2.5,
+      "shank_diameter_mm": 21.99,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 33.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0435 (EN17/24T)": 380.0,
+        "0336 (42CrMo4)": 380.0
+      },
+      "source_row": 81
+    },
+    {
+      "type_code": "1121",
+      "size_code": "1120",
+      "thread_diameter_mm": 24.0,
+      "pitch_mm": 3.0,
+      "shank_diameter_mm": 23.99,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 36.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0435 (EN17/24T)": 490.0,
+        "0336 (42CrMo4)": 490.0
+      },
+      "source_row": 82
+    },
+    {
+      "type_code": "1135",
+      "size_code": "1400",
+      "thread_diameter_mm": 18.0,
+      "pitch_mm": 2.5,
+      "shank_diameter_mm": 17.966,
+      "groove_diameter_mm": 14.15,
+      "contact_diameter_mm": 27.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0419 (35-CD-4)": 200.0,
+        "1557 (Classe 10-9)": 245.0
+      },
+      "source_row": 83
+    },
+    {
+      "type_code": "1135",
+      "size_code": "1850",
+      "thread_diameter_mm": 20.0,
+      "pitch_mm": 2.5,
+      "shank_diameter_mm": 19.959,
+      "groove_diameter_mm": 16.15,
+      "contact_diameter_mm": 30.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0419 (35-CD-4)": 275.0,
+        "1557 (Classe 10-9)": 345.0
+      },
+      "source_row": 84
+    },
+    {
+      "type_code": "1135",
+      "size_code": "2400",
+      "thread_diameter_mm": 22.0,
+      "pitch_mm": 2.5,
+      "shank_diameter_mm": 21.959,
+      "groove_diameter_mm": 18.15,
+      "contact_diameter_mm": 32.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0419 (35-CD-4)": 375.0,
+        "1557 (Classe 10-9)": 465.0
+      },
+      "source_row": 85
+    },
+    {
+      "type_code": "1135",
+      "size_code": "3000",
+      "thread_diameter_mm": 22.0,
+      "pitch_mm": 2.5,
+      "shank_diameter_mm": 21.959,
+      "groove_diameter_mm": 18.15,
+      "contact_diameter_mm": 32.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0419 (35-CD-4)": 375.0,
+        "1557 (Classe 10-9)": 465.0
+      },
+      "source_row": 86
+    },
+    {
+      "type_code": "1135",
+      "size_code": "4200",
+      "thread_diameter_mm": 24.0,
+      "pitch_mm": 3.0,
+      "shank_diameter_mm": 23.959,
+      "groove_diameter_mm": 19.35,
+      "contact_diameter_mm": 36.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0419 (35-CD-4)": 465.0,
+        "1557 (Classe 10-9)": 590.0
+      },
+      "source_row": 87
+    },
+    {
+      "type_code": "1135",
+      "size_code": "6000",
+      "thread_diameter_mm": 30.0,
+      "pitch_mm": 3.5,
+      "shank_diameter_mm": 29.959,
+      "groove_diameter_mm": 24.75,
+      "contact_diameter_mm": 46.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0419 (35-CD-4)": 950.0,
+        "1557 (Classe 10-9)": 1190.0
+      },
+      "source_row": 88
+    },
+    {
+      "type_code": "1135",
+      "size_code": "9009",
+      "thread_diameter_mm": 33.0,
+      "pitch_mm": 3.5,
+      "shank_diameter_mm": 32.95,
+      "groove_diameter_mm": 27.75,
+      "contact_diameter_mm": 50.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0419 (35-CD-4)": 1250.0,
+        "1557 (Classe 10-9)": 1610.0
+      },
+      "source_row": 89
+    },
+    {
+      "type_code": "1135",
+      "size_code": "9012",
+      "thread_diameter_mm": 36.0,
+      "pitch_mm": 4.0,
+      "shank_diameter_mm": 35.95,
+      "groove_diameter_mm": 30.05,
+      "contact_diameter_mm": 55.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0419 (35-CD-4)": 1650.0,
+        "1557 (Classe 10-9)": 2080.0
+      },
+      "source_row": 90
+    },
+    {
+      "type_code": "1135",
+      "size_code": "9015",
+      "thread_diameter_mm": 36.0,
+      "pitch_mm": 4.0,
+      "shank_diameter_mm": 35.95,
+      "groove_diameter_mm": 30.05,
+      "contact_diameter_mm": 55.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0419 (35-CD-4)": 1650.0,
+        "1557 (Classe 10-9)": 2080.0
+      },
+      "source_row": 91
+    },
+    {
+      "type_code": "1135",
+      "size_code": "9022",
+      "thread_diameter_mm": 42.0,
+      "pitch_mm": 4.5,
+      "shank_diameter_mm": 41.95,
+      "groove_diameter_mm": 35.5,
+      "contact_diameter_mm": 65.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0419 (35-CD-4)": 2350.0,
+        "1557 (Classe 10-9)": 2960.0
+      },
+      "source_row": 92
+    },
+    {
+      "type_code": "1135",
+      "size_code": "9033",
+      "thread_diameter_mm": 48.0,
+      "pitch_mm": 5.0,
+      "shank_diameter_mm": 47.95,
+      "groove_diameter_mm": 40.75,
+      "contact_diameter_mm": 75.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {},
+      "source_row": 93
+    },
+    {
+      "type_code": "1161",
+      "size_code": "0010",
+      "thread_diameter_mm": 5.0,
+      "pitch_mm": 0.8,
+      "shank_diameter_mm": 4.988,
+      "groove_diameter_mm": 4.0,
+      "contact_diameter_mm": 7.890000000000001,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {},
+      "source_row": 94
+    },
+    {
+      "type_code": "1161",
+      "size_code": "0021",
+      "thread_diameter_mm": 6.0,
+      "pitch_mm": 1.0,
+      "shank_diameter_mm": 5.988,
+      "groove_diameter_mm": 4.7,
+      "contact_diameter_mm": 9.89,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {},
+      "source_row": 95
+    },
+    {
+      "type_code": "1161",
+      "size_code": "0055",
+      "thread_diameter_mm": 8.0,
+      "pitch_mm": 1.25,
+      "shank_diameter_mm": 7.988,
+      "groove_diameter_mm": 6.4,
+      "contact_diameter_mm": 12.865,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {},
+      "source_row": 96
+    },
+    {
+      "type_code": "1161",
+      "size_code": "0120",
+      "thread_diameter_mm": 10.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 9.988,
+      "groove_diameter_mm": 8.1,
+      "contact_diameter_mm": 16.865000000000002,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {},
+      "source_row": 97
+    },
+    {
+      "type_code": "1161",
+      "size_code": "0300",
+      "thread_diameter_mm": 12.0,
+      "pitch_mm": 1.75,
+      "shank_diameter_mm": 11.988,
+      "groove_diameter_mm": 9.8,
+      "contact_diameter_mm": 18.835,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0336 (42CrMo4)": 65.0
+      },
+      "source_row": 98
+    },
+    {
+      "type_code": "1161",
+      "size_code": "0500",
+      "thread_diameter_mm": 14.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 13.988,
+      "groove_diameter_mm": 11.5,
+      "contact_diameter_mm": 21.835,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0336 (42CrMo4)": 105.0
+      },
+      "source_row": 99
+    },
+    {
+      "type_code": "1161",
+      "size_code": "0750",
+      "thread_diameter_mm": 16.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 15.988,
+      "groove_diameter_mm": 13.5,
+      "contact_diameter_mm": 23.835,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0336 (42CrMo4)": 160.0
+      },
+      "source_row": 100
+    },
+    {
+      "type_code": "1161",
+      "size_code": "1050",
+      "thread_diameter_mm": 18.0,
+      "pitch_mm": 2.5,
+      "shank_diameter_mm": 17.988,
+      "groove_diameter_mm": 14.9,
+      "contact_diameter_mm": 26.58,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0336 (42CrMo4)": 225.0
+      },
+      "source_row": 101
+    },
+    {
+      "type_code": "1161",
+      "size_code": "1500",
+      "thread_diameter_mm": 20.0,
+      "pitch_mm": 2.5,
+      "shank_diameter_mm": 19.985,
+      "groove_diameter_mm": 16.9,
+      "contact_diameter_mm": 29.58,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0336 (42CrMo4)": 305.0
+      },
+      "source_row": 102
+    },
+    {
+      "type_code": "1161",
+      "size_code": "2000",
+      "thread_diameter_mm": 22.0,
+      "pitch_mm": 2.5,
+      "shank_diameter_mm": 21.985,
+      "groove_diameter_mm": 18.9,
+      "contact_diameter_mm": 31.5,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0336 (42CrMo4)": 425.0
+      },
+      "source_row": 103
+    },
+    {
+      "type_code": "1161",
+      "size_code": "2600",
+      "thread_diameter_mm": 24.0,
+      "pitch_mm": 3.0,
+      "shank_diameter_mm": 23.985,
+      "groove_diameter_mm": 20.3,
+      "contact_diameter_mm": 35.5,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0336 (42CrMo4)": 525.0
+      },
+      "source_row": 104
+    },
+    {
+      "type_code": "1161",
+      "size_code": "3350",
+      "thread_diameter_mm": 24.0,
+      "pitch_mm": 3.0,
+      "shank_diameter_mm": 25.985,
+      "groove_diameter_mm": 20.3,
+      "contact_diameter_mm": 35.5,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0336 (42CrMo4)": 525.0
+      },
+      "source_row": 105
+    },
+    {
+      "type_code": "1161",
+      "size_code": "4250",
+      "thread_diameter_mm": 27.0,
+      "pitch_mm": 3.0,
+      "shank_diameter_mm": 27.985,
+      "groove_diameter_mm": 23.3,
+      "contact_diameter_mm": 40.5,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0336 (42CrMo4)": 785.0
+      },
+      "source_row": 106
+    },
+    {
+      "type_code": "1161",
+      "size_code": "6010",
+      "thread_diameter_mm": 30.0,
+      "pitch_mm": 3.5,
+      "shank_diameter_mm": 31.982,
+      "groove_diameter_mm": 25.7,
+      "contact_diameter_mm": 45.5,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0336 (42CrMo4)": 1095.0
+      },
+      "source_row": 107
+    },
+    {
+      "type_code": "1161",
+      "size_code": "8500",
+      "thread_diameter_mm": 36.0,
+      "pitch_mm": 4.0,
+      "shank_diameter_mm": 35.982,
+      "groove_diameter_mm": 31.0,
+      "contact_diameter_mm": 54.4,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0336 (42CrMo4)": 1860.0
+      },
+      "source_row": 108
+    },
+    {
+      "type_code": "1161",
+      "size_code": "9013",
+      "thread_diameter_mm": 39.0,
+      "pitch_mm": 4.0,
+      "shank_diameter_mm": 40.982,
+      "groove_diameter_mm": 34.0,
+      "contact_diameter_mm": 59.4,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0336 (42CrMo4)": 2400.0
+      },
+      "source_row": 109
+    },
+    {
+      "type_code": "1161",
+      "size_code": "9017",
+      "thread_diameter_mm": 45.0,
+      "pitch_mm": 4.5,
+      "shank_diameter_mm": 44.982,
+      "groove_diameter_mm": 39.4,
+      "contact_diameter_mm": 69.05,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0336 (42CrMo4)": 3700.0
+      },
+      "source_row": 110
+    },
+    {
+      "type_code": "1161",
+      "size_code": "9021",
+      "thread_diameter_mm": 48.0,
+      "pitch_mm": 5.0,
+      "shank_diameter_mm": 47.982,
+      "groove_diameter_mm": 41.8,
+      "contact_diameter_mm": 74.05,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0336 (42CrMo4)": 4450.0
+      },
+      "source_row": 111
+    },
+    {
+      "type_code": "1161",
+      "size_code": "9036",
+      "thread_diameter_mm": 56.0,
+      "pitch_mm": 5.5,
+      "shank_diameter_mm": 57.975,
+      "groove_diameter_mm": 49.2,
+      "contact_diameter_mm": 83.9,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0336 (42CrMo4)": 7200.0
+      },
+      "source_row": 112
+    },
+    {
+      "type_code": "1161",
+      "size_code": "9049",
+      "thread_diameter_mm": 64.0,
+      "pitch_mm": 6.0,
+      "shank_diameter_mm": 63.975,
+      "groove_diameter_mm": 56.6,
+      "contact_diameter_mm": 93.9,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0336 (42CrMo4)": 10700.0
+      },
+      "source_row": 113
+    },
+    {
+      "type_code": "1136",
+      "size_code": "1400",
+      "thread_diameter_mm": 10.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 9.986,
+      "groove_diameter_mm": 7.45,
+      "contact_diameter_mm": 17.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0419 (35-CD-4)": 30.0
+      },
+      "source_row": 114
+    },
+    {
+      "type_code": "1136",
+      "size_code": "1850",
+      "thread_diameter_mm": 10.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 11.983,
+      "groove_diameter_mm": 7.45,
+      "contact_diameter_mm": 17.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0419 (35-CD-4)": 30.0
+      },
+      "source_row": 115
+    },
+    {
+      "type_code": "1136",
+      "size_code": "3000",
+      "thread_diameter_mm": 12.0,
+      "pitch_mm": 1.75,
+      "shank_diameter_mm": 13.983,
+      "groove_diameter_mm": 9.15,
+      "contact_diameter_mm": 19.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0419 (35-CD-4)": 60.0
+      },
+      "source_row": 116
+    },
+    {
+      "type_code": "1136",
+      "size_code": "6000",
+      "thread_diameter_mm": 16.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 15.983,
+      "groove_diameter_mm": 12.75,
+      "contact_diameter_mm": 22.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0419 (35-CD-4)": 135.0
+      },
+      "source_row": 117
+    },
+    {
+      "type_code": "1136",
+      "size_code": "9009",
+      "thread_diameter_mm": 16.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 17.983,
+      "groove_diameter_mm": 12.75,
+      "contact_diameter_mm": 24.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0419 (35-CD-4)": 135.0
+      },
+      "source_row": 118
+    },
+    {
+      "type_code": "1136",
+      "size_code": "9012",
+      "thread_diameter_mm": 20.0,
+      "pitch_mm": 2.5,
+      "shank_diameter_mm": 19.98,
+      "groove_diameter_mm": 16.15,
+      "contact_diameter_mm": 30.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0419 (35-CD-4)": 270.0
+      },
+      "source_row": 119
+    },
+    {
+      "type_code": "1136",
+      "size_code": "9015",
+      "thread_diameter_mm": 20.0,
+      "pitch_mm": 2.5,
+      "shank_diameter_mm": 21.98,
+      "groove_diameter_mm": 16.15,
+      "contact_diameter_mm": 30.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0419 (35-CD-4)": 375.0
+      },
+      "source_row": 120
+    },
+    {
+      "type_code": "1412",
+      "size_code": "04xx",
+      "thread_diameter_mm": 2.0,
+      "pitch_mm": 0.4,
+      "shank_diameter_mm": 2.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 4.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {},
+      "source_row": 121
+    },
+    {
+      "type_code": "1412",
+      "size_code": "07xx",
+      "thread_diameter_mm": 2.5,
+      "pitch_mm": 0.45,
+      "shank_diameter_mm": 2.5,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 5.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {},
+      "source_row": 122
+    },
+    {
+      "type_code": "1412",
+      "size_code": "10xx",
+      "thread_diameter_mm": 3.0,
+      "pitch_mm": 0.5,
+      "shank_diameter_mm": 3.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 5.5,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 2.3,
+        "0418 (Classe 8-8)": 1.87,
+        "1557 (Classe 10-9)": 1.9
+      },
+      "source_row": 123
+    },
+    {
+      "type_code": "1412",
+      "size_code": "16xx",
+      "thread_diameter_mm": 4.0,
+      "pitch_mm": 0.7,
+      "shank_diameter_mm": 4.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 7.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 5.3,
+        "0418 (Classe 8-8)": 3.1,
+        "0550 (Inox 80)": 2.6,
+        "0552 (Inox 70)": 2.0,
+        "1557 (Classe 10-9)": 4.4
+      },
+      "source_row": 124
+    },
+    {
+      "type_code": "1412",
+      "size_code": "21xx",
+      "thread_diameter_mm": 5.0,
+      "pitch_mm": 0.8,
+      "shank_diameter_mm": 5.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 8.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 10.5,
+        "0418 (Classe 8-8)": 6.15,
+        "0550 (Inox 80)": 5.1,
+        "0552 (Inox 70)": 3.8,
+        "1557 (Classe 10-9)": 8.6
+      },
+      "source_row": 125
+    },
+    {
+      "type_code": "1412",
+      "size_code": "26xx",
+      "thread_diameter_mm": 6.0,
+      "pitch_mm": 1.0,
+      "shank_diameter_mm": 6.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 10.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 17.8,
+        "0418 (Classe 8-8)": 13.0,
+        "0550 (Inox 80)": 9.1,
+        "0552 (Inox 70)": 6.7,
+        "1557 (Classe 10-9)": 15.0
+      },
+      "source_row": 126
+    },
+    {
+      "type_code": "1412",
+      "size_code": "31xx",
+      "thread_diameter_mm": 8.0,
+      "pitch_mm": 1.25,
+      "shank_diameter_mm": 8.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 13.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 43.0,
+        "0418 (Classe 8-8)": 25.0,
+        "0550 (Inox 80)": 21.7,
+        "0552 (Inox 70)": 16.3,
+        "1557 (Classe 10-9)": 36.0
+      },
+      "source_row": 127
+    },
+    {
+      "type_code": "1412",
+      "size_code": "34xx",
+      "thread_diameter_mm": 10.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 10.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 16.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 87.0,
+        "0418 (Classe 8-8)": 50.0,
+        "0550 (Inox 80)": 44.0,
+        "0552 (Inox 70)": 33.0,
+        "1557 (Classe 10-9)": 72.0
+      },
+      "source_row": 128
+    },
+    {
+      "type_code": "1412",
+      "size_code": "38xx",
+      "thread_diameter_mm": 12.0,
+      "pitch_mm": 1.75,
+      "shank_diameter_mm": 12.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 18.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 150.0,
+        "0418 (Classe 8-8)": 86.0,
+        "0550 (Inox 80)": 74.0,
+        "0552 (Inox 70)": 56.0,
+        "1557 (Classe 10-9)": 125.0
+      },
+      "source_row": 129
+    },
+    {
+      "type_code": "1412",
+      "size_code": "43xx",
+      "thread_diameter_mm": 14.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 14.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 21.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 240.0,
+        "0418 (Classe 8-8)": 141.0,
+        "0550 (Inox 80)": 119.0,
+        "0552 (Inox 70)": 89.0,
+        "1557 (Classe 10-9)": 198.0
+      },
+      "source_row": 130
+    },
+    {
+      "type_code": "1412",
+      "size_code": "47xx",
+      "thread_diameter_mm": 16.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 16.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 24.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 365.0,
+        "0418 (Classe 8-8)": 215.0,
+        "0550 (Inox 80)": 181.0,
+        "0552 (Inox 70)": 136.0,
+        "1557 (Classe 10-9)": 305.0
+      },
+      "source_row": 131
+    },
+    {
+      "type_code": "1412",
+      "size_code": "50xx",
+      "thread_diameter_mm": 18.0,
+      "pitch_mm": 2.5,
+      "shank_diameter_mm": 18.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 27.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 500.0,
+        "0418 (Classe 8-8)": 295.0,
+        "0550 (Inox 80)": 261.0,
+        "0552 (Inox 70)": 196.0,
+        "1557 (Classe 10-9)": 420.0
+      },
+      "source_row": 132
+    },
+    {
+      "type_code": "1412",
+      "size_code": "54xx",
+      "thread_diameter_mm": 20.0,
+      "pitch_mm": 2.5,
+      "shank_diameter_mm": 20.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 30.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 710.0,
+        "0418 (Classe 8-8)": 420.0,
+        "0550 (Inox 80)": 366.0,
+        "0552 (Inox 70)": 274.0,
+        "1557 (Classe 10-9)": 590.0
+      },
+      "source_row": 133
+    },
+    {
+      "type_code": "1412",
+      "size_code": "55xx",
+      "thread_diameter_mm": 22.0,
+      "pitch_mm": 2.5,
+      "shank_diameter_mm": 22.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 34.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 960.0,
+        "0418 (Classe 8-8)": 570.0,
+        "0550 (Inox 80)": 494.0,
+        "0552 (Inox 70)": 206.0,
+        "1557 (Classe 10-9)": 800.0
+      },
+      "source_row": 134
+    },
+    {
+      "type_code": "1412",
+      "size_code": "58xx",
+      "thread_diameter_mm": 24.0,
+      "pitch_mm": 3.0,
+      "shank_diameter_mm": 24.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 36.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 1220.0,
+        "0418 (Classe 8-8)": 725.0,
+        "0550 (Inox 80)": 634.0,
+        "0552 (Inox 70)": 264.0,
+        "1557 (Classe 10-9)": 1020.0
+      },
+      "source_row": 135
+    },
+    {
+      "type_code": "1412",
+      "size_code": "62xx",
+      "thread_diameter_mm": 27.0,
+      "pitch_mm": 3.0,
+      "shank_diameter_mm": 27.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 41.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 1810.0,
+        "0418 (Classe 8-8)": 1070.0,
+        "0552 (Inox 70)": 371.0,
+        "1557 (Classe 10-9)": 1510.0
+      },
+      "source_row": 136
+    },
+    {
+      "type_code": "1412",
+      "size_code": "64xx",
+      "thread_diameter_mm": 30.0,
+      "pitch_mm": 3.5,
+      "shank_diameter_mm": 30.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 46.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 2450.0,
+        "0418 (Classe 8-8)": 1450.0,
+        "0552 (Inox 70)": 503.0,
+        "1557 (Classe 10-9)": 2050.0
+      },
+      "source_row": 137
+    },
+    {
+      "type_code": "1412",
+      "size_code": "67xx",
+      "thread_diameter_mm": 33.0,
+      "pitch_mm": 3.5,
+      "shank_diameter_mm": 33.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 50.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 3330.0,
+        "0418 (Classe 8-8)": 1970.0,
+        "1557 (Classe 10-9)": 2770.0
+      },
+      "source_row": 138
+    },
+    {
+      "type_code": "1412",
+      "size_code": "71xx",
+      "thread_diameter_mm": 36.0,
+      "pitch_mm": 4.0,
+      "shank_diameter_mm": 36.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 55.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 4280.0,
+        "0418 (Classe 8-8)": 2530.0,
+        "1557 (Classe 10-9)": 3560.0
+      },
+      "source_row": 139
+    },
+    {
+      "type_code": "1412",
+      "size_code": "75xx",
+      "thread_diameter_mm": 39.0,
+      "pitch_mm": 4.0,
+      "shank_diameter_mm": 39.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 60.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {},
+      "source_row": 140
+    },
+    {
+      "type_code": "1512",
+      "size_code": "04xx",
+      "thread_diameter_mm": 2.0,
+      "pitch_mm": 0.4,
+      "shank_diameter_mm": 2.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 4.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {},
+      "source_row": 141
+    },
+    {
+      "type_code": "1512",
+      "size_code": "07xx",
+      "thread_diameter_mm": 2.5,
+      "pitch_mm": 0.45,
+      "shank_diameter_mm": 2.5,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 5.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {},
+      "source_row": 142
+    },
+    {
+      "type_code": "1512",
+      "size_code": "10xx",
+      "thread_diameter_mm": 3.0,
+      "pitch_mm": 0.5,
+      "shank_diameter_mm": 3.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 5.5,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 2.3,
+        "0418 (Classe 8-8)": 1.87,
+        "1557 (Classe 10-9)": 1.9
+      },
+      "source_row": 143
+    },
+    {
+      "type_code": "1512",
+      "size_code": "16xx",
+      "thread_diameter_mm": 4.0,
+      "pitch_mm": 0.7,
+      "shank_diameter_mm": 4.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 7.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 5.3,
+        "0418 (Classe 8-8)": 3.1,
+        "0550 (Inox 80)": 2.6,
+        "0552 (Inox 70)": 2.0,
+        "1557 (Classe 10-9)": 4.4
+      },
+      "source_row": 144
+    },
+    {
+      "type_code": "1512",
+      "size_code": "21xx",
+      "thread_diameter_mm": 5.0,
+      "pitch_mm": 0.8,
+      "shank_diameter_mm": 5.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 8.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 10.5,
+        "0418 (Classe 8-8)": 6.15,
+        "0550 (Inox 80)": 5.1,
+        "0552 (Inox 70)": 3.8,
+        "1557 (Classe 10-9)": 8.6
+      },
+      "source_row": 145
+    },
+    {
+      "type_code": "1512",
+      "size_code": "26xx",
+      "thread_diameter_mm": 6.0,
+      "pitch_mm": 1.0,
+      "shank_diameter_mm": 6.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 10.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 17.8,
+        "0418 (Classe 8-8)": 10.5,
+        "0550 (Inox 80)": 9.1,
+        "0552 (Inox 70)": 6.7,
+        "1557 (Classe 10-9)": 15.0
+      },
+      "source_row": 146
+    },
+    {
+      "type_code": "1512",
+      "size_code": "31xx",
+      "thread_diameter_mm": 8.0,
+      "pitch_mm": 1.25,
+      "shank_diameter_mm": 8.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 13.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 43.0,
+        "0418 (Classe 8-8)": 26.0,
+        "0550 (Inox 80)": 21.7,
+        "0552 (Inox 70)": 16.3,
+        "1557 (Classe 10-9)": 36.0
+      },
+      "source_row": 147
+    },
+    {
+      "type_code": "1512",
+      "size_code": "34xx",
+      "thread_diameter_mm": 10.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 10.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 16.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 87.0,
+        "0418 (Classe 8-8)": 51.0,
+        "0550 (Inox 80)": 44.0,
+        "0552 (Inox 70)": 33.0,
+        "1557 (Classe 10-9)": 72.0
+      },
+      "source_row": 148
+    },
+    {
+      "type_code": "1512",
+      "size_code": "38xx",
+      "thread_diameter_mm": 12.0,
+      "pitch_mm": 1.75,
+      "shank_diameter_mm": 12.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 18.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 150.0,
+        "0418 (Classe 8-8)": 89.0,
+        "0550 (Inox 80)": 74.0,
+        "0552 (Inox 70)": 56.0,
+        "1557 (Classe 10-9)": 125.0
+      },
+      "source_row": 149
+    },
+    {
+      "type_code": "1512",
+      "size_code": "43xx",
+      "thread_diameter_mm": 14.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 14.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 21.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 240.0,
+        "0418 (Classe 8-8)": 141.0,
+        "0550 (Inox 80)": 119.0,
+        "0552 (Inox 70)": 89.0,
+        "1557 (Classe 10-9)": 198.0
+      },
+      "source_row": 150
+    },
+    {
+      "type_code": "1512",
+      "size_code": "47xx",
+      "thread_diameter_mm": 16.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 16.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 24.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 365.0,
+        "0418 (Classe 8-8)": 215.0,
+        "0550 (Inox 80)": 181.0,
+        "0552 (Inox 70)": 136.0,
+        "1557 (Classe 10-9)": 305.0
+      },
+      "source_row": 151
+    },
+    {
+      "type_code": "1512",
+      "size_code": "50xx",
+      "thread_diameter_mm": 18.0,
+      "pitch_mm": 2.5,
+      "shank_diameter_mm": 18.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 27.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 500.0,
+        "0418 (Classe 8-8)": 295.0,
+        "0550 (Inox 80)": 261.0,
+        "0552 (Inox 70)": 196.0,
+        "1557 (Classe 10-9)": 420.0
+      },
+      "source_row": 152
+    },
+    {
+      "type_code": "1512",
+      "size_code": "54xx",
+      "thread_diameter_mm": 20.0,
+      "pitch_mm": 2.5,
+      "shank_diameter_mm": 20.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 30.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 710.0,
+        "0418 (Classe 8-8)": 420.0,
+        "0550 (Inox 80)": 366.0,
+        "0552 (Inox 70)": 274.0,
+        "1557 (Classe 10-9)": 590.0
+      },
+      "source_row": 153
+    },
+    {
+      "type_code": "1512",
+      "size_code": "55xx",
+      "thread_diameter_mm": 22.0,
+      "pitch_mm": 2.5,
+      "shank_diameter_mm": 22.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 34.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 960.0,
+        "0418 (Classe 8-8)": 570.0,
+        "0550 (Inox 80)": 494.0,
+        "0552 (Inox 70)": 206.0,
+        "1557 (Classe 10-9)": 800.0
+      },
+      "source_row": 154
+    },
+    {
+      "type_code": "1512",
+      "size_code": "58xx",
+      "thread_diameter_mm": 24.0,
+      "pitch_mm": 3.0,
+      "shank_diameter_mm": 24.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 36.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 1220.0,
+        "0418 (Classe 8-8)": 725.0,
+        "0550 (Inox 80)": 634.0,
+        "0552 (Inox 70)": 264.0,
+        "1557 (Classe 10-9)": 1020.0
+      },
+      "source_row": 155
+    },
+    {
+      "type_code": "1512",
+      "size_code": "62xx",
+      "thread_diameter_mm": 27.0,
+      "pitch_mm": 3.0,
+      "shank_diameter_mm": 27.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 41.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 1810.0,
+        "0418 (Classe 8-8)": 1070.0,
+        "0552 (Inox 70)": 371.0,
+        "1557 (Classe 10-9)": 1510.0
+      },
+      "source_row": 156
+    },
+    {
+      "type_code": "1512",
+      "size_code": "64xx",
+      "thread_diameter_mm": 30.0,
+      "pitch_mm": 3.5,
+      "shank_diameter_mm": 30.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 46.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 2450.0,
+        "0418 (Classe 8-8)": 1450.0,
+        "0552 (Inox 70)": 503.0,
+        "1557 (Classe 10-9)": 2050.0
+      },
+      "source_row": 157
+    },
+    {
+      "type_code": "1512",
+      "size_code": "67xx",
+      "thread_diameter_mm": 33.0,
+      "pitch_mm": 3.5,
+      "shank_diameter_mm": 33.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 50.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 3330.0,
+        "0418 (Classe 8-8)": 1970.0,
+        "1557 (Classe 10-9)": 2770.0
+      },
+      "source_row": 158
+    },
+    {
+      "type_code": "1512",
+      "size_code": "71xx",
+      "thread_diameter_mm": 36.0,
+      "pitch_mm": 4.0,
+      "shank_diameter_mm": 36.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 55.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 4280.0,
+        "0418 (Classe 8-8)": 2530.0,
+        "1557 (Classe 10-9)": 3560.0
+      },
+      "source_row": 159
+    },
+    {
+      "type_code": "1512",
+      "size_code": "75xx",
+      "thread_diameter_mm": 39.0,
+      "pitch_mm": 4.0,
+      "shank_diameter_mm": 39.0,
+      "groove_diameter_mm": 0.0,
+      "contact_diameter_mm": 60.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {},
+      "source_row": 160
+    },
+    {
+      "type_code": "1442",
+      "size_code": "21xx",
+      "thread_diameter_mm": 5.0,
+      "pitch_mm": 0.8,
+      "shank_diameter_mm": 6.0,
+      "groove_diameter_mm": 3.68,
+      "contact_diameter_mm": 8.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 10.5,
+        "0418 (Classe 8-8)": 6.15,
+        "0550 (Inox 80)": 5.1,
+        "0552 (Inox 70)": 3.8,
+        "1557 (Classe 10-9)": 8.6
+      },
+      "source_row": 161
+    },
+    {
+      "type_code": "1442",
+      "size_code": "26xx",
+      "thread_diameter_mm": 6.0,
+      "pitch_mm": 1.0,
+      "shank_diameter_mm": 8.0,
+      "groove_diameter_mm": 4.4,
+      "contact_diameter_mm": 10.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 17.8,
+        "0418 (Classe 8-8)": 13.0,
+        "0550 (Inox 80)": 9.1,
+        "0552 (Inox 70)": 6.7,
+        "1557 (Classe 10-9)": 15.0
+      },
+      "source_row": 162
+    },
+    {
+      "type_code": "1442",
+      "size_code": "31xx",
+      "thread_diameter_mm": 8.0,
+      "pitch_mm": 1.25,
+      "shank_diameter_mm": 10.0,
+      "groove_diameter_mm": 6.03,
+      "contact_diameter_mm": 13.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 43.0,
+        "0418 (Classe 8-8)": 25.0,
+        "0550 (Inox 80)": 21.7,
+        "0552 (Inox 70)": 16.3,
+        "1557 (Classe 10-9)": 36.0
+      },
+      "source_row": 163
+    },
+    {
+      "type_code": "1442",
+      "size_code": "34xx",
+      "thread_diameter_mm": 10.0,
+      "pitch_mm": 1.5,
+      "shank_diameter_mm": 12.0,
+      "groove_diameter_mm": 7.69,
+      "contact_diameter_mm": 16.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 87.0,
+        "0418 (Classe 8-8)": 50.0,
+        "0550 (Inox 80)": 44.0,
+        "0552 (Inox 70)": 33.0,
+        "1557 (Classe 10-9)": 72.0
+      },
+      "source_row": 164
+    },
+    {
+      "type_code": "1442",
+      "size_code": "38xx",
+      "thread_diameter_mm": 12.0,
+      "pitch_mm": 1.75,
+      "shank_diameter_mm": 16.0,
+      "groove_diameter_mm": 9.35,
+      "contact_diameter_mm": 18.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 150.0,
+        "0418 (Classe 8-8)": 86.0,
+        "0550 (Inox 80)": 74.0,
+        "0552 (Inox 70)": 56.0,
+        "1557 (Classe 10-9)": 125.0
+      },
+      "source_row": 165
+    },
+    {
+      "type_code": "1442",
+      "size_code": "47xx",
+      "thread_diameter_mm": 16.0,
+      "pitch_mm": 2.0,
+      "shank_diameter_mm": 20.0,
+      "groove_diameter_mm": 12.96,
+      "contact_diameter_mm": 24.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 365.0,
+        "0418 (Classe 8-8)": 215.0,
+        "0550 (Inox 80)": 181.0,
+        "0552 (Inox 70)": 136.0,
+        "1557 (Classe 10-9)": 305.0
+      },
+      "source_row": 166
+    },
+    {
+      "type_code": "1442",
+      "size_code": "54xx",
+      "thread_diameter_mm": 20.0,
+      "pitch_mm": 2.5,
+      "shank_diameter_mm": 24.0,
+      "groove_diameter_mm": 16.3,
+      "contact_diameter_mm": 30.0,
+      "thread_type": "Machined",
+      "standard_tightening_torque_nm": {
+        "0225 (Classe 12-9)": 710.0,
+        "0418 (Classe 8-8)": 420.0,
+        "0550 (Inox 80)": 366.0,
+        "0552 (Inox 70)": 274.0,
+        "1557 (Classe 10-9)": 590.0
+      },
+      "source_row": 167
     }
   ],
   "materials": [
-    {"code": "0418 (Classe 8-8)", "yield_strength_mpa": 640.0},
-    {"code": "1557 (Classe 10-9)", "yield_strength_mpa": 900.0},
-    {"code": "0225 (Classe 12-9)", "yield_strength_mpa": 1080.0},
-    {"code": "0336 (42CrMo4)", "yield_strength_mpa": 650.0},
-    {"code": "0435 (EN17/24T)", "yield_strength_mpa": 635.0},
-    {"code": "0436 (EN24X)", "yield_strength_mpa": 1005.0},
-    {"code": "0419 (35-CD-4)", "yield_strength_mpa": 665.0},
-    {"code": "1052 (High T.steel)", "yield_strength_mpa": 1080.0},
-    {"code": "A2/A4-50 S Steel", "yield_strength_mpa": 210.0},
-    {"code": "A2/A4-70 S Steel", "yield_strength_mpa": 450.0},
-    {"code": "A2/A4-80 S Steel", "yield_strength_mpa": 600.0},
-    {"code": "0550 (Inox 80)", "yield_strength_mpa": 600.0}
+    {
+      "code": "0418 (Classe 8-8)",
+      "yield_strength_mpa": 640.0
+    },
+    {
+      "code": "1557 (Classe 10-9)",
+      "yield_strength_mpa": 900.0
+    },
+    {
+      "code": "0225 (Classe 12-9)",
+      "yield_strength_mpa": 1080.0
+    },
+    {
+      "code": "0336 (42CrMo4)",
+      "yield_strength_mpa": 650.0
+    },
+    {
+      "code": "0435 (EN17/24T)",
+      "yield_strength_mpa": 635.0
+    },
+    {
+      "code": "0436 (EN24X)",
+      "yield_strength_mpa": 1005.0
+    },
+    {
+      "code": "0419 (35-CD-4)",
+      "yield_strength_mpa": 665.0
+    },
+    {
+      "code": "1052 (High T.steel)",
+      "yield_strength_mpa": 1080.0
+    },
+    {
+      "code": "A2/A4-50 S Steel",
+      "yield_strength_mpa": 210.0
+    },
+    {
+      "code": "A2/A4-70 S Steel",
+      "yield_strength_mpa": 450.0
+    },
+    {
+      "code": "A2/A4-80 S Steel",
+      "yield_strength_mpa": 600.0
+    },
+    {
+      "code": "0552 (Inox 70)",
+      "yield_strength_mpa": 450.0
+    },
+    {
+      "code": "0550 (Inox 80)",
+      "yield_strength_mpa": 600.0
+    }
   ],
   "friction_factors": [
-    {"label": "Emuge+Oil", "mu": 0.155},
-    {"label": "Light Oil", "mu": 0.12},
-    {"label": "API 671", "mu": 0.15},
-    {"label": "Custom", "mu": 0.15}
+    {
+      "label": "Emuge+Oil",
+      "mu": 0.155
+    },
+    {
+      "label": "Prevailing+Oil",
+      "mu": 0.155
+    },
+    {
+      "label": "Prevailing+Moly",
+      "mu": 0.114
+    },
+    {
+      "label": "Prevailing+Adhesive",
+      "mu": 0.138
+    },
+    {
+      "label": "Prevailing+Black",
+      "mu": 0.212
+    },
+    {
+      "label": "Adhesive",
+      "mu": 0.12
+    },
+    {
+      "label": "Light Oil",
+      "mu": 0.12
+    },
+    {
+      "label": "API 671",
+      "mu": 0.15
+    },
+    {
+      "label": "Black",
+      "mu": 0.145
+    },
+    {
+      "label": "Black+Oil",
+      "mu": 0.12
+    },
+    {
+      "label": "Zinc",
+      "mu": 0.18
+    },
+    {
+      "label": "Zinc+Wax",
+      "mu": 0.072
+    },
+    {
+      "label": "Self",
+      "mu": 0.147
+    },
+    {
+      "label": "Phosphate+Oil",
+      "mu": 0.106
+    },
+    {
+      "label": "Moly",
+      "mu": 0.095
+    },
+    {
+      "label": "Custom",
+      "mu": 0.15
+    }
   ]
 }
