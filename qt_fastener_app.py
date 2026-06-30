@@ -1,413 +1,406 @@
 from __future__ import annotations
 
 import argparse
+import json
 import math
+import re
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 from bolt_database import (
     DATABASE_PATH,
     connect,
-    get_bolt_size,
-    get_property_class,
-    list_bolt_sizes,
-    list_property_classes,
-    recommend_bolt_size,
+    get_ctp_screw_record,
+    get_friction_factor,
+    get_material_yield,
+    list_ctp_screw_types,
+    list_ctp_sizes,
+    list_friction_presets,
+    list_material_codes,
 )
-from coupling_calculations import CouplingInputs, CouplingResult, calculate
-from standards import standard_basis_lines, standard_profile_items
+from coupling_calculations import (
+    CTP_CHECKING_STANDARD_NAMES,
+    CTP_DEFAULT_CHECKING_STANDARD,
+    CTP_DEFAULT_JOINT_TYPE,
+    CTP_JOINT_TYPES,
+    CtpInputs,
+    CtpResult,
+    calculate_ctp,
+    default_ctp_inputs,
+)
 
 
-GOVERNING_CASE_DISPLAY = {
-    "steady-state selection": "Steady",
-    "cyclic torque": "Cyclic",
-    "maximum transient torque": "Transient",
+SLEEVE_MATERIAL_YIELD_MPA = {
+    "N/A": 0.0,
+    "GMC 0401 - 245 MPa": 245.0,
+    "GMC 0336 - 650 MPa": 650.0,
+    "GMC0433 - 800 MPa": 800.0,
 }
+APP_NAME = "CTP0007 Issue H"
 
 
 def smoke_test() -> None:
     conn = connect()
-    bolt = get_bolt_size(conn, "M10")
-    prop = get_property_class(conn, "10.9")
-    inputs = CouplingInputs(
-        transmitted_torque_nm=1200,
-        service_factor=1.5,
-        cyclic_torque_nm=0,
-        transient_torque_nm=0,
-        bolt_count=8,
-        friction_coefficient=0.18,
-        inner_radius_mm=45,
-        outer_radius_mm=115,
-        friction_interfaces=1,
-        initial_preload_per_bolt_n=25000,
-        preload_loss_percent=15,
-        separating_load_per_bolt_n=1000,
-        bolt_stiffness_n_per_mm=30000,
-        joint_stiffness_n_per_mm=15000,
-        max_yield_utilization=0.70,
-    )
-    result = calculate(inputs, bolt, prop)
+    record = get_ctp_screw_record(conn, "1512", "47xx")
+    inputs = default_ctp_inputs(record)
+    result = calculate_ctp(inputs, record, get_material_yield(conn, inputs.material_code))
     print(f"database={DATABASE_PATH}")
-    print(f"bolt={bolt.designation} class={prop.name}")
-    print(f"slip_safety_factor={result.slip_safety_factor:.3f}")
-    print(f"governing_torque_case={result.governing_torque_case}")
-    print(f"design_torque_nm={result.design_torque_nm:.1f}")
-    print(f"residual_pretension_n={result.residual_pretension_n:.1f}")
-    print(f"service_residual_pretension_n={result.service_residual_pretension_n:.1f}")
-    print(f"assembly_yield_utilization={result.assembly_yield_utilization:.3f}")
+    print(f"reference={inputs.reference}")
+    print(f"screw={record.screw_type} {record.size}")
+    print(f"preload_n={result.axial_pretension_n:.3f}")
+    print(f"flange_friction_torque_nm={result.flange_friction_torque_nm:.3f}")
+    print(f"minimum_safety_factor={result.minimum_safety_factor:.3f}")
 
 
 def run_gui() -> int:
     try:
-        from PySide6.QtCore import QPointF, QRectF, Qt
-        from PySide6.QtGui import QColor, QFont, QPainter, QPen
+        from PySide6.QtCore import Qt
+        from PySide6.QtGui import QAction, QKeySequence
         from PySide6.QtWidgets import (
             QApplication,
+            QAbstractItemView,
+            QCheckBox,
             QComboBox,
             QDoubleSpinBox,
             QFormLayout,
             QFrame,
             QGridLayout,
             QGroupBox,
+            QHeaderView,
             QHBoxLayout,
             QLabel,
+            QLineEdit,
             QMainWindow,
             QMessageBox,
+            QInputDialog,
+            QFileDialog,
             QPushButton,
             QScrollArea,
+            QSplitter,
             QSpinBox,
+            QTableWidget,
+            QTableWidgetItem,
             QVBoxLayout,
             QWidget,
         )
     except ModuleNotFoundError:
         print("PySide6 is required for the native GUI.")
         print("Install it with:")
-        print("  python3 -m pip install -r apps/coupling-fastener-desktop/requirements-desktop.txt")
+        print("  python -m pip install -r requirements-desktop.txt")
         return 2
 
-    class DiagramWidget(QWidget):
-        def __init__(self) -> None:
-            super().__init__()
-            self.inputs: CouplingInputs | None = None
-            self.result: CouplingResult | None = None
-            self.setMinimumSize(620, 520)
+    class NoWheelDoubleSpinBox(QDoubleSpinBox):
+        def wheelEvent(self, event) -> None:
+            event.ignore()
 
-        def set_state(self, inputs: CouplingInputs, result: CouplingResult) -> None:
-            self.inputs = inputs
-            self.result = result
-            self.update()
+    class NoWheelSpinBox(QSpinBox):
+        def wheelEvent(self, event) -> None:
+            event.ignore()
 
-        def paintEvent(self, _event) -> None:  # noqa: N802 - Qt API
-            painter = QPainter(self)
-            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-            painter.fillRect(self.rect(), QColor("#ffffff"))
-            if self.inputs is None or self.result is None:
-                return
-            self._draw_annulus(painter, QRectF(28, 28, 300, 250))
-            self._draw_triangle(painter, QRectF(370, 28, max(330, self.width() - 400), 300))
-            self._draw_bars(painter, QRectF(28, 345, self.width() - 56, 140))
-
-        def _label(self, painter, text: str, x: float, y: float, size: int = 11, color: str = "#142126", bold: bool = False) -> None:
-            font = QFont("Arial", size)
-            font.setBold(bold)
-            painter.setFont(font)
-            painter.setPen(QColor(color))
-            painter.drawText(QPointF(x, y), text)
-
-        def _draw_annulus(self, painter, rect: QRectF) -> None:
-            assert self.inputs is not None and self.result is not None
-            inputs = self.inputs
-            result = self.result
-            self._label(painter, "Friction annulus", rect.left(), rect.top() + 14, 12, bold=True)
-            cx = rect.left() + rect.width() / 2
-            cy = rect.top() + rect.height() / 2 + 18
-            outer = min(rect.width(), rect.height()) * 0.38
-            inner = max(24, outer * inputs.inner_radius_mm / inputs.outer_radius_mm)
-            pitch = (outer + inner) / 2
-
-            painter.setPen(QPen(QColor("#24454b"), 3))
-            painter.setBrush(QColor("#bfe8df"))
-            painter.drawEllipse(QPointF(cx, cy), outer, outer)
-            painter.setBrush(QColor("#ffffff"))
-            painter.drawEllipse(QPointF(cx, cy), inner, inner)
-            pen = QPen(QColor("#85aeb2"), 1.5)
-            pen.setDashPattern([4, 6])
-            painter.setPen(pen)
-            painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.drawEllipse(QPointF(cx, cy), pitch, pitch)
-
-            for index in range(inputs.bolt_count):
-                angle = -math.pi / 2 + index * math.tau / inputs.bolt_count
-                bx = cx + math.cos(angle) * pitch
-                by = cy + math.sin(angle) * pitch
-                painter.setPen(QPen(QColor("#26383f"), 2))
-                painter.setBrush(QColor("#f7faf9"))
-                painter.drawEllipse(QPointF(bx, by), 9, 9)
-                painter.setPen(Qt.PenStyle.NoPen)
-                painter.setBrush(QColor("#4f5d67"))
-                painter.drawEllipse(QPointF(bx, by), 3, 3)
-
-            painter.setPen(QPen(QColor("#d68b18"), 7, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
-            painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.drawArc(QRectF(cx + outer * 0.55, cy - outer * 0.56, outer * 0.9, outer * 1.12), 95 * 16, -185 * 16)
-            self._label(
-                painter,
-                f"r_eff {result.effective_radius_mm:.1f} mm | T_slip {result.slip_capacity_nm:,.0f} N*m",
-                cx - 118,
-                rect.bottom() - 8,
-                10,
-                "#5d7078",
-            )
-
-        def _draw_triangle(self, painter, rect: QRectF) -> None:
-            assert self.inputs is not None and self.result is not None
-            inputs = self.inputs
-            result = self.result
-            self._label(painter, "Bolt-joint triangle", rect.left(), rect.top() + 14, 12, bold=True)
-            left = rect.left() + 40
-            right = rect.right() - 20
-            top = rect.top() + 50
-            bottom = rect.bottom() - 28
-            max_load = max(
-                result.bolt_yield_load_n * 1.05,
-                inputs.initial_preload_per_bolt_n * 1.15,
-                result.bolt_load_under_service_n * 1.15,
-                result.required_initial_preload_per_bolt_n * 1.15,
-            )
-
-            def yy(load: float) -> float:
-                return bottom - max(0.0, load) / max_load * (bottom - top)
-
-            painter.setPen(QPen(QColor("#7c8d94"), 1))
-            painter.drawLine(QPointF(left, bottom), QPointF(right, bottom))
-            painter.drawLine(QPointF(left, bottom), QPointF(left, top))
-            self._hline(painter, left, right, yy(result.bolt_yield_load_n), "#b9322e")
-            self._hline(painter, left, right, yy(inputs.initial_preload_per_bolt_n), "#73838a")
-            self._hline(painter, left, right, yy(result.residual_pretension_n), "#0c8279")
-            self._hline(painter, left, right, yy(result.service_residual_pretension_n), "#d68b18" if result.service_residual_pretension_n > 0 else "#b9322e")
-            self._legend(
-                painter,
-                left + 12,
-                top + 18,
-                [
-                    ("#b9322e", "Yield load"),
-                    ("#73838a", "Initial preload"),
-                    ("#0c8279", "Residual pretension"),
-                    ("#d68b18", "Residual after load"),
-                ],
-            )
-
-            delta = inputs.separating_load_per_bolt_n / (
-                inputs.bolt_stiffness_n_per_mm + inputs.joint_stiffness_n_per_mm
-            )
-            x0 = left + 42
-            x1 = x0 + min(right - x0 - 34, max(56, delta * 2200))
-            painter.setPen(QPen(QColor("#0c8279"), 3))
-            painter.drawLine(QPointF(x0, yy(result.residual_pretension_n)), QPointF(x1, yy(result.bolt_load_under_service_n)))
-            painter.setPen(QPen(QColor("#26383f"), 3))
-            painter.drawLine(QPointF(x0, yy(result.residual_pretension_n)), QPointF(x1, yy(result.service_residual_pretension_n)))
-            pen = QPen(QColor("#d68b18"), 2)
-            pen.setDashPattern([5, 4])
-            painter.setPen(pen)
-            painter.drawLine(QPointF(x1, yy(result.service_residual_pretension_n)), QPointF(x1, yy(result.bolt_load_under_service_n)))
-            self._label(painter, f"Bolt load {result.bolt_load_under_service_n:,.0f} N", x1 + 8, yy(result.bolt_load_under_service_n), 10, "#0b4f49", True)
-            self._label(painter, f"F_res {result.service_residual_pretension_n:,.0f} N", x1 + 8, yy(result.service_residual_pretension_n) + 14, 10, "#8a5b0d", True)
-            self._label(painter, f"Phi = {result.load_fraction_to_bolt:.2f} | external axial per bolt = {inputs.separating_load_per_bolt_n:,.0f} N", x0, bottom + 22, 10, "#5d7078")
-            self._label(painter, f"Slip SF {result.slip_safety_factor:.2f}", right - 88, top - 10, 11, "#0c8279" if result.slip_safety_factor >= 1 else "#b9322e", True)
-
-        def _hline(self, painter, left: float, right: float, y: float, color: str) -> None:
-            pen = QPen(QColor(color), 1.5)
-            pen.setDashPattern([6, 5])
-            painter.setPen(pen)
-            painter.drawLine(QPointF(left, y), QPointF(right, y))
-
-        def _legend(self, painter, x: float, y: float, items: list[tuple[str, str]]) -> None:
-            painter.fillRect(QRectF(x - 8, y - 16, 160, len(items) * 18 + 8), QColor(255, 255, 255, 225))
-            for index, (color, text) in enumerate(items):
-                yy = y + index * 18
-                painter.setPen(QPen(QColor(color), 2))
-                painter.drawLine(QPointF(x, yy - 4), QPointF(x + 22, yy - 4))
-                self._label(painter, text, x + 28, yy, 9, color, True)
-
-        def _draw_bars(self, painter, rect: QRectF) -> None:
-            assert self.inputs is not None and self.result is not None
-            inputs = self.inputs
-            result = self.result
-            self._label(painter, "Yield and preload utilization", rect.left(), rect.top() + 14, 12, bold=True)
-            items = [
-                ("Initial preload", inputs.initial_preload_per_bolt_n, result.assembly_yield_utilization),
-                ("Service bolt load", result.bolt_load_under_service_n, result.service_yield_utilization),
-                ("Required preload", result.required_initial_preload_per_bolt_n, result.required_preload_yield_utilization),
-            ]
-            bar_x = rect.left() + 170
-            bar_w = max(160, rect.width() - 310)
-            for index, (name, _load, ratio) in enumerate(items):
-                y = rect.top() + 42 + index * 34
-                self._label(painter, name, rect.left(), y + 13, 10, "#314248", True)
-                painter.setPen(QPen(QColor("#d1dcdf"), 1))
-                painter.setBrush(QColor("#edf3f4"))
-                painter.drawRect(QRectF(bar_x, y, bar_w, 18))
-                painter.setPen(Qt.PenStyle.NoPen)
-                painter.setBrush(QColor("#0c8279" if ratio <= inputs.max_yield_utilization else "#b9322e"))
-                painter.drawRect(QRectF(bar_x, y, min(bar_w, bar_w * ratio), 18))
-                self._label(painter, f"{ratio * 100:.1f}% yield", bar_x + bar_w + 12, y + 13, 10, "#5d7078")
-
-    class ResultCard(QFrame):
-        def __init__(self, title: str) -> None:
-            super().__init__()
-            self.setObjectName("card")
-            layout = QVBoxLayout(self)
-            layout.setContentsMargins(12, 10, 12, 10)
-            title_label = QLabel(title.upper())
-            title_label.setObjectName("metricTitle")
-            self.value_label = QLabel("--")
-            self.value_label.setObjectName("metricValue")
-            layout.addWidget(title_label)
-            layout.addWidget(self.value_label)
-
-        def set_value(self, value: str, danger: bool = False) -> None:
-            self.value_label.setText(value)
-            self.value_label.setProperty("danger", danger)
-            self.value_label.style().unpolish(self.value_label)
-            self.value_label.style().polish(self.value_label)
+    class NoWheelComboBox(QComboBox):
+        def wheelEvent(self, event) -> None:
+            event.ignore()
 
     class MainWindow(QMainWindow):
         def __init__(self) -> None:
             super().__init__()
             self.conn = connect()
-            self.setWindowTitle("Coupling Fastener Design")
-            self.resize(1240, 800)
-            self.cards: dict[str, ResultCard] = {}
+            self._updating_sizes = False
+            self._last_output_table = None
+            self._project_path: Path | None = None
+            self._applying_state = True
+            self._undo_stack: list[dict] = []
+            self._redo_stack: list[dict] = []
+            self._last_state: dict | None = None
+            self.setWindowTitle(APP_NAME)
+            self.resize(1280, 820)
+            self._build_actions()
             self._build_ui()
+            self._sync_size_list()
+            self._load_record_defaults()
             self.update_calculation()
+            self._applying_state = False
+            self._last_state = self._project_state()
+            self._update_action_state()
+
+        def _build_actions(self) -> None:
+            file_menu = self.menuBar().addMenu("&File")
+            self.open_action = QAction("Open", self)
+            self.open_action.setShortcut(QKeySequence.StandardKey.Open)
+            self.open_action.setShortcutContext(Qt.ShortcutContext.ApplicationShortcut)
+            self.open_action.triggered.connect(self._open_project)
+            file_menu.addAction(self.open_action)
+
+            self.save_action = QAction("Save", self)
+            self.save_action.setShortcut(QKeySequence.StandardKey.Save)
+            self.save_action.setShortcutContext(Qt.ShortcutContext.ApplicationShortcut)
+            self.save_action.triggered.connect(self._save_project)
+            file_menu.addAction(self.save_action)
+
+            self.save_as_action = QAction("Save As", self)
+            self.save_as_action.setShortcut(QKeySequence("Ctrl+Shift+S"))
+            self.save_as_action.setShortcutContext(Qt.ShortcutContext.ApplicationShortcut)
+            self.save_as_action.triggered.connect(self._save_project_as)
+            file_menu.addAction(self.save_as_action)
+
+            edit_menu = self.menuBar().addMenu("&Edit")
+            self.undo_action = QAction("Undo", self)
+            self.undo_action.setShortcut(QKeySequence.StandardKey.Undo)
+            self.undo_action.setShortcutContext(Qt.ShortcutContext.ApplicationShortcut)
+            self.undo_action.triggered.connect(self._undo)
+            edit_menu.addAction(self.undo_action)
+
+            self.redo_action = QAction("Redo", self)
+            self.redo_action.setShortcut(QKeySequence.StandardKey.Redo)
+            self.redo_action.setShortcutContext(Qt.ShortcutContext.ApplicationShortcut)
+            self.redo_action.triggered.connect(self._redo)
+            edit_menu.addAction(self.redo_action)
+
+        def _update_action_state(self) -> None:
+            if hasattr(self, "undo_action"):
+                self.undo_action.setEnabled(bool(self._undo_stack))
+                self.redo_action.setEnabled(bool(self._redo_stack))
 
         def _build_ui(self) -> None:
             root = QWidget()
             self.setCentralWidget(root)
             layout = QGridLayout(root)
-            layout.setContentsMargins(14, 14, 14, 14)
-            layout.setHorizontalSpacing(14)
-
-            inputs = self._build_inputs()
-            workbench = self._build_workbench()
-            results = self._build_results()
-            layout.addWidget(inputs, 0, 0)
-            layout.addWidget(workbench, 0, 1)
-            layout.addWidget(results, 0, 2)
+            layout.setContentsMargins(12, 12, 12, 12)
+            layout.setHorizontalSpacing(12)
+            layout.addWidget(self._build_inputs(), 0, 0)
+            layout.addWidget(self._build_results(), 0, 1)
             layout.setColumnStretch(1, 1)
 
         def _build_inputs(self) -> QWidget:
-            frame = QFrame()
-            frame.setObjectName("inputRail")
-            frame.setFixedWidth(340)
-            layout = QVBoxLayout(frame)
-            title = QLabel("Coupling Fastener Design")
+            scroll = QScrollArea()
+            scroll.setWidgetResizable(True)
+            scroll.setFixedWidth(430)
+            scroll.setObjectName("inputRail")
+            scroll.viewport().setObjectName("inputViewport")
+            body = QWidget()
+            body.setObjectName("inputBody")
+            layout = QVBoxLayout(body)
+            title = QLabel(APP_NAME)
             title.setObjectName("railTitle")
             layout.addWidget(title)
 
-            self.bolt_size = QComboBox()
-            self.bolt_size.addItems(list_bolt_sizes(self.conn))
-            self.bolt_size.setCurrentText("M10")
-            self.property_class = QComboBox()
-            self.property_class.addItems(list_property_classes(self.conn))
-            self.property_class.setCurrentText("10.9")
-            self.radius_model = QComboBox()
-            self.radius_model.addItems(["uniform_pressure", "uniform_wear"])
-            self.standard_profile = QComboBox()
-            self.profile_keys_by_label = {
-                label: key for key, label in standard_profile_items()
-            }
-            self.standard_profile.addItems(list(self.profile_keys_by_label.keys()))
+            self.reference = QLineEdit("TSKW/0360/KA/GA253480 Hub Bolts")
+            self.screw_type = NoWheelComboBox()
+            self.screw_type.addItems(list_ctp_screw_types(self.conn))
+            self.screw_type.setCurrentText("1512")
+            self.size = NoWheelComboBox()
+            self.material = NoWheelComboBox()
+            self.material.addItems(list_material_codes(self.conn))
+            self.material.setCurrentText("0225 (Classe 12-9)")
+            self.manual_yield = self._double(get_material_yield(self.conn, self.material.currentText()), 0, 3000, 1)
+            self.pcd = self._double(447, 0.1, 100000, 1)
+            self.screw_count = self._spin(10, 1, 500)
+            self.thread = self._double(14, 0.1, 500, 3)
+            self.pitch = self._double(2, 0.01, 50, 3)
+            self.shank = self._double(8, 0, 500, 3)
+            self.groove = self._optional_diameter_combo(10, 0, 500, 3)
+            self.contact = self._double(18, 0.1, 1000, 3)
+            self.thread_type = NoWheelComboBox()
+            self.thread_type.addItems(["Machined", "Rolled"])
+            self.shear_plane = NoWheelComboBox()
+            self.shear_plane.addItems(["Thread", "Shank"])
+            self.joint_type = NoWheelComboBox()
+            self.joint_type.addItems(list(CTP_JOINT_TYPES))
+            self.joint_type.setCurrentText(CTP_DEFAULT_JOINT_TYPE)
+            self.pack_thickness = self._optional_diameter_combo(0, 0, 1000, 3)
+            self.leverarm = self._double(0.05, 0, 1000, 3)
+            self.leverarm.setReadOnly(True)
+            self.nut_contact_mode = NoWheelComboBox()
+            self.nut_contact_mode.addItems(["Standard", "Special"])
+            self.custom_contact = self._optional_diameter_combo(0, 0, 1000, 3)
+            self.sleeve_od = self._optional_diameter_combo(0, 0, 1000, 3)
+            self.sleeve_material = NoWheelComboBox()
+            self.sleeve_material.addItems(list(SLEEVE_MATERIAL_YIELD_MPA))
+            self.sleeve_material.setCurrentText("N/A")
+            self.sleeve_yield = self._double(SLEEVE_MATERIAL_YIELD_MPA[self.sleeve_material.currentText()], 0, 3000, 1)
+            self.sleeve_yield.setReadOnly(True)
+            self.tapped_hole_yield = self._optional_diameter_combo(0, 0, 3000, 1)
 
-            form = QFormLayout()
-            form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
-            self._add_form_row(form, "Bolt size", self.bolt_size)
-            self._add_form_row(form, "Material class", self.property_class)
-            self._add_form_row(form, "Standard profile", self.standard_profile)
-            self._add_form_row(form, "Friction radius model", self.radius_model)
+            friction_names = list_friction_presets(self.conn)
+            self.screw_nut_preset = self._preset_combo(friction_names, "Emuge+Oil")
+            self.nut_part_preset = self._preset_combo(friction_names, "Light Oil")
+            self.part_part_preset = self._preset_combo(friction_names, "API 671")
+            self.screw_nut_mu = self._double(0.155, 0.001, 2, 3)
+            self.nut_part_mu = self._double(0.12, 0.001, 2, 3)
+            self.part_part_mu = self._double(0.15, 0.001, 2, 3)
+            self.continuous_torque = self._double(40100, 0, 10000000, 1)
+            self.peak_torque = self._double(80200, 0, 10000000, 1)
+            self.momentary_torque = self._double(92230, 0, 10000000, 1)
+            self.tightening_torque = self._blank_zero_double(0, 0, 1000000, 1)
+            self.percent_tys = self._blank_zero_double(0, 0, 100, 2)
+            self.use_standard_torque = QCheckBox("Use standard tightening torque")
+            self.use_standard_torque.setChecked(True)
+            self.thread_engagement = self._double(0, 0, 10000, 3)
 
-            self.torque = self._double(1200, 0, 1_000_000, 1)
-            self.service_factor = self._double(1.5, 0.01, 10, 2)
-            self.cyclic_torque = self._double(0, 0, 10_000_000, 1)
-            self.transient_torque = self._double(0, 0, 10_000_000, 1)
-            self.bolt_count = self._spin(8, 1, 128)
-            self.mu = self._double(0.18, 0.01, 1.0, 3)
-            self.inner_radius = self._double(45, 0, 10_000, 1)
-            self.outer_radius = self._double(115, 0.1, 10_000, 1)
-            self.interfaces = self._spin(1, 1, 12)
-            self.initial_preload = self._double(25000, 0, 5_000_000, 0)
-            self.preload_loss = self._double(15, 0, 99, 1)
-            self.separating_load = self._double(1000, 0, 5_000_000, 0)
-            self.bolt_stiffness = self._double(30000, 1, 1_000_000, 0)
-            self.joint_stiffness = self._double(15000, 1, 1_000_000, 0)
-            self.yield_limit = self._double(0.70, 0.01, 1.0, 2)
-
-            for label, widget, unit in [
-                ("Transmitted torque", self.torque, "N*m"),
-                ("Service factor", self.service_factor, "x"),
-                ("Cyclic torque", self.cyclic_torque, "N*m"),
-                ("Transient torque", self.transient_torque, "N*m"),
-                ("Number of bolts", self.bolt_count, "pcs"),
-                ("Friction coefficient", self.mu, "mu"),
-                ("Inner friction radius", self.inner_radius, "mm"),
-                ("Outer friction radius", self.outer_radius, "mm"),
-                ("Friction interfaces", self.interfaces, "faces"),
-                ("Initial preload per bolt", self.initial_preload, "N"),
-                ("Preload loss", self.preload_loss, "%"),
-                ("Separating load per bolt", self.separating_load, "N"),
-                ("Bolt stiffness", self.bolt_stiffness, "N/mm"),
-                ("Joint stiffness", self.joint_stiffness, "N/mm"),
-                ("Max yield utilization", self.yield_limit, "ratio"),
-            ]:
-                row = QWidget()
-                row_layout = QHBoxLayout(row)
-                row_layout.setContentsMargins(0, 0, 0, 0)
-                row_layout.addWidget(widget)
-                unit_label = QLabel(unit)
-                unit_label.setObjectName("unitLabel")
-                row_layout.addWidget(unit_label)
-                self._add_form_row(form, label, row)
-
-            layout.addLayout(form)
-            button = QPushButton("Calculate")
-            button.clicked.connect(self.update_calculation)
-            layout.addWidget(button)
+            self._add_group(
+                layout,
+                "Reference and Screw",
+                [
+                    ("Reference", self.reference),
+                    ("Type", self.screw_type),
+                    ("Size", self.size),
+                    ("Material", self.material),
+                    ("TYS MPa", self.manual_yield),
+                ],
+            )
+            self._add_group(
+                layout,
+                "Joint Geometry",
+                [
+                    ("PCD mm", self.pcd),
+                    ("Screw count", self.screw_count),
+                    ("Thread mm", self.thread),
+                    ("Pitch mm", self.pitch),
+                    ("Shank dia mm", self.shank),
+                    ("Groove dia mm", self.groove),
+                    ("Contact dia mm", self.contact),
+                    ("Nut contact", self.nut_contact_mode),
+                    ("Special contact dia", self.custom_contact),
+                    ("Thread type", self.thread_type),
+                    ("Shear plane", self.shear_plane),
+                    ("Joint type", self.joint_type),
+                    ("Pack thickness mm", self.pack_thickness),
+                    ("Sleeve OD mm", self.sleeve_od),
+                    ("Sleeve material", self.sleeve_material),
+                    ("Sleeve yield MPa", self.sleeve_yield),
+                    ("Tapped hole yield MPa", self.tapped_hole_yield),
+                    ("Thread engagement mm", self.thread_engagement),
+                ],
+            )
+            self._add_group(
+                layout,
+                "Friction and Torque",
+                [
+                    ("Screw/nut preset", self.screw_nut_preset),
+                    ("Screw/nut mu", self.screw_nut_mu),
+                    ("Nut/part preset", self.nut_part_preset),
+                    ("Nut/part mu", self.nut_part_mu),
+                    ("Part/part preset", self.part_part_preset),
+                    ("Part/part mu", self.part_part_mu),
+                    ("Continuous Nm", self.continuous_torque),
+                    ("Peak Nm", self.peak_torque),
+                    ("Momentary Nm", self.momentary_torque),
+                    ("Tightening Nm", self.tightening_torque),
+                    ("% TYS", self.percent_tys),
+                    ("Standard torque", self.use_standard_torque),
+                ],
+            )
             layout.addStretch(1)
+            scroll.setWidget(body)
 
-            for widget in [
-                self.bolt_size,
-                self.property_class,
-                self.standard_profile,
-                self.radius_model,
-                self.torque,
-                self.service_factor,
-                self.cyclic_torque,
-                self.transient_torque,
-                self.bolt_count,
-                self.mu,
-                self.inner_radius,
-                self.outer_radius,
-                self.interfaces,
-                self.initial_preload,
-                self.preload_loss,
-                self.separating_load,
-                self.bolt_stiffness,
-                self.joint_stiffness,
-                self.yield_limit,
-            ]:
+            self.screw_type.currentTextChanged.connect(self._sync_size_list)
+            self.size.currentTextChanged.connect(self._load_record_defaults)
+            self.material.currentTextChanged.connect(self._load_material_yield)
+            self.joint_type.currentTextChanged.connect(self._sync_joint_geometry)
+            self.pack_thickness.currentTextChanged.connect(self._sync_joint_geometry)
+            self.nut_contact_mode.currentTextChanged.connect(self._sync_nut_contact)
+            self.sleeve_od.currentTextChanged.connect(self._sync_sleeve_fields)
+            self.sleeve_material.currentTextChanged.connect(self._load_sleeve_yield)
+            for preset in [self.screw_nut_preset, self.nut_part_preset, self.part_part_preset]:
+                preset.currentTextChanged.connect(self._apply_friction_presets)
+            for widget in self._all_input_widgets():
                 if isinstance(widget, QComboBox):
-                    widget.currentTextChanged.connect(self.update_calculation)
+                    widget.currentTextChanged.connect(self._input_changed)
+                elif isinstance(widget, QCheckBox):
+                    widget.stateChanged.connect(self._input_changed)
+                elif isinstance(widget, QLineEdit):
+                    widget.textChanged.connect(self._input_changed)
                 else:
-                    widget.valueChanged.connect(self.update_calculation)
+                    widget.valueChanged.connect(self._input_changed)
+            return scroll
+
+        def _build_results(self) -> QWidget:
+            frame = QFrame()
+            frame.setObjectName("results")
+            layout = QVBoxLayout(frame)
+            top = QHBoxLayout()
+            headings = QVBoxLayout()
+            title = QLabel("Bolted Joint Calculation")
+            title.setObjectName("title")
+            self.spec = QLabel("")
+            self.spec.setObjectName("spec")
+            headings.addWidget(title)
+            headings.addWidget(self.spec)
+            self.criteria_standard = NoWheelComboBox()
+            self.criteria_standard.addItems(list(CTP_CHECKING_STANDARD_NAMES))
+            self.criteria_standard.setCurrentText(CTP_DEFAULT_CHECKING_STANDARD)
+            self.goal_seek_button = QPushButton("Goal Seek")
+            self.goal_seek_button.setObjectName("goalSeek")
+            self.status = QLabel("OK")
+            self.status.setObjectName("status")
+            top.addLayout(headings)
+            top.addWidget(self.goal_seek_button)
+            top.addWidget(self.criteria_standard)
+            top.addWidget(self.status)
+            layout.addLayout(top)
+            tables = QSplitter(Qt.Orientation.Vertical)
+            tables.setChildrenCollapsible(False)
+
+            self.summary = QTableWidget(7, 2)
+            self.summary.setHorizontalHeaderLabels(["Item", "Value"])
+            self._prepare_table(self.summary)
+            tables.addWidget(self._wrapped_table("Screw Data Summary", self.summary))
+
+            self.capability = QTableWidget(3, 9)
+            self.capability.setHorizontalHeaderLabels(
+                [
+                    "Case",
+                    "Duty Nm",
+                    "Friction Nm",
+                    "Ratio %",
+                    "Residual Nm",
+                    "Shear N",
+                    "Sleeve SF",
+                    "Maxi Stress (VM) MPa",
+                    "Bolt SF",
+                ]
+            )
+            self._prepare_table(self.capability)
+            tables.addWidget(self._wrapped_table("Bolted Joint Capability", self.capability))
+
+            self.stresses = QTableWidget(4, 3)
+            self.stresses.setHorizontalHeaderLabels(["Check", "Value", "Status"])
+            self._prepare_table(self.stresses)
+            tables.addWidget(self._wrapped_table("Stresses and Checks", self.stresses))
+            for table in (self.summary, self.capability, self.stresses):
+                table.itemSelectionChanged.connect(
+                    lambda table=table: self._remember_output_table(table)
+                )
+
+            checks_group = QGroupBox("Warnings")
+            checks_layout = QVBoxLayout(checks_group)
+            self.checks = QLabel("")
+            self.checks.setWordWrap(True)
+            checks_layout.addWidget(self.checks)
+            tables.addWidget(checks_group)
+            tables.setSizes([210, 165, 145, 90])
+            layout.addWidget(tables, 1)
+            self.goal_seek_button.clicked.connect(self._open_goal_seek)
+            self.criteria_standard.currentTextChanged.connect(self._input_changed)
             return frame
 
-        def _add_form_row(self, form: QFormLayout, label: str, widget: QWidget) -> None:
-            label_widget = QLabel(label)
-            label_widget.setObjectName("formLabel")
-            form.addRow(label_widget, widget)
+        def _add_group(self, parent: QVBoxLayout, title: str, rows: list[tuple[str, QWidget]]) -> None:
+            group = QGroupBox(title)
+            form = QFormLayout(group)
+            form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+            for label, widget in rows:
+                form.addRow(QLabel(label), widget)
+            parent.addWidget(group)
+
+        def _preset_combo(self, names: list[str], current: str) -> QComboBox:
+            combo = NoWheelComboBox()
+            combo.addItems(names)
+            combo.setCurrentText(current)
+            return combo
 
         def _double(self, value: float, minimum: float, maximum: float, decimals: int) -> QDoubleSpinBox:
-            box = QDoubleSpinBox()
+            box = NoWheelDoubleSpinBox()
             box.setRange(minimum, maximum)
             box.setDecimals(decimals)
             box.setSingleStep(10 ** -decimals if decimals else 100)
@@ -415,169 +408,1154 @@ def run_gui() -> int:
             box.setButtonSymbols(QDoubleSpinBox.ButtonSymbols.NoButtons)
             return box
 
+        def _blank_zero_double(
+            self,
+            value: float,
+            minimum: float,
+            maximum: float,
+            decimals: int,
+        ) -> QDoubleSpinBox:
+            box = self._double(value, minimum, maximum, decimals)
+            box.setSpecialValueText(" ")
+            return box
+
+        def _optional_diameter_combo(
+            self,
+            value: float,
+            minimum: float,
+            maximum: float,
+            decimals: int,
+        ) -> QComboBox:
+            combo = NoWheelComboBox()
+            combo.setEditable(True)
+            combo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+            combo.addItem("N/A")
+            combo.setProperty("minimum", minimum)
+            combo.setProperty("maximum", maximum)
+            combo.setProperty("decimals", decimals)
+            self._set_optional_diameter(combo, value)
+            return combo
+
+        def _set_optional_diameter(self, combo: QComboBox, value: float) -> None:
+            decimals = int(combo.property("decimals"))
+            combo.setCurrentText("N/A" if value <= 0 else f"{value:.{decimals}f}")
+
+        def _optional_diameter_value(self, combo: QComboBox, label: str) -> float:
+            text = combo.currentText().strip()
+            if not text or text.lower() in {"n/a", "na", "none"}:
+                return 0.0
+            try:
+                value = float(text)
+            except ValueError as exc:
+                raise ValueError(f"{label} must be N/A or a valid diameter.") from exc
+            minimum = float(combo.property("minimum"))
+            maximum = float(combo.property("maximum"))
+            if value < minimum or value > maximum:
+                raise ValueError(f"{label} must be between {minimum:g} and {maximum:g} mm, or N/A.")
+            return value
+
         def _spin(self, value: int, minimum: int, maximum: int) -> QSpinBox:
-            box = QSpinBox()
+            box = NoWheelSpinBox()
             box.setRange(minimum, maximum)
             box.setValue(value)
             box.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
             return box
 
-        def _build_workbench(self) -> QWidget:
-            frame = QFrame()
-            frame.setObjectName("workbench")
-            layout = QVBoxLayout(frame)
-            top = QHBoxLayout()
-            text = QVBoxLayout()
-            eyebrow = QLabel("SQLite metric bolt database + flange friction torque model")
-            eyebrow.setObjectName("eyebrow")
-            title = QLabel("Torque transmission by friction between flanges")
-            title.setObjectName("title")
-            self.spec = QLabel("")
-            self.spec.setObjectName("spec")
-            text.addWidget(eyebrow)
-            text.addWidget(title)
-            text.addWidget(self.spec)
-            self.status = QLabel("OK")
-            self.status.setObjectName("status")
-            top.addLayout(text)
-            top.addWidget(self.status)
-            layout.addLayout(top)
-            self.diagram = DiagramWidget()
-            layout.addWidget(self.diagram, 1)
-            return frame
+        def _prepare_table(self, table: QTableWidget) -> None:
+            table.verticalHeader().setVisible(False)
+            table.horizontalHeader().setStretchLastSection(False)
+            table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+            table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+            table.setAlternatingRowColors(True)
+            table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+            table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
+            table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
-        def _build_results(self) -> QWidget:
-            scroll = QScrollArea()
-            scroll.setObjectName("results")
-            scroll.setFixedWidth(330)
-            scroll.setWidgetResizable(True)
-            body = QWidget()
-            layout = QVBoxLayout(body)
-            title = QLabel("Results")
-            title.setObjectName("resultsTitle")
-            layout.addWidget(title)
-            for title_text, key in [
-                ("Slip safety factor", "slip_sf"),
-                ("Slip torque capacity", "slip_capacity"),
-                ("Design torque demand", "design_torque"),
-                ("Governing torque case", "governing_case"),
-                ("Minimum service factor", "minimum_sf"),
-                ("Residual pretension", "residual"),
-                ("Residual after axial load", "service_residual"),
-                ("Required initial preload", "required_initial"),
-                ("Bolt yield load", "yield_load"),
-                ("Assembly yield utilization", "assembly_util"),
-                ("Service yield utilization", "service_util"),
-            ]:
-                card = ResultCard(title_text)
-                self.cards[key] = card
-                layout.addWidget(card)
-            checks_group = QGroupBox("Checks")
-            checks_layout = QVBoxLayout(checks_group)
-            self.checks = QLabel("")
-            self.checks.setWordWrap(True)
-            checks_layout.addWidget(self.checks)
-            layout.addWidget(checks_group)
-            layout.addStretch(1)
-            scroll.setWidget(body)
-            return scroll
+        def _wrapped_table(self, title: str, table: QTableWidget) -> QGroupBox:
+            group = QGroupBox(title)
+            layout = QVBoxLayout(group)
+            layout.addWidget(table)
+            return group
 
-        def inputs(self) -> CouplingInputs:
-            return CouplingInputs(
-                transmitted_torque_nm=self.torque.value(),
-                service_factor=self.service_factor.value(),
-                cyclic_torque_nm=self.cyclic_torque.value(),
-                transient_torque_nm=self.transient_torque.value(),
-                bolt_count=self.bolt_count.value(),
-                friction_coefficient=self.mu.value(),
-                inner_radius_mm=self.inner_radius.value(),
-                outer_radius_mm=self.outer_radius.value(),
-                friction_interfaces=self.interfaces.value(),
-                initial_preload_per_bolt_n=self.initial_preload.value(),
-                preload_loss_percent=self.preload_loss.value(),
-                separating_load_per_bolt_n=self.separating_load.value(),
-                bolt_stiffness_n_per_mm=self.bolt_stiffness.value(),
-                joint_stiffness_n_per_mm=self.joint_stiffness.value(),
-                max_yield_utilization=self.yield_limit.value(),
-                radius_model=self.radius_model.currentText(),
-                standard_profile=self.profile_keys_by_label[self.standard_profile.currentText()],
+        def _remember_output_table(self, table: QTableWidget) -> None:
+            if table.selectedIndexes():
+                self._last_output_table = table
+                for other in self._output_tables():
+                    if other is table:
+                        continue
+                    other.blockSignals(True)
+                    other.clearSelection()
+                    other.blockSignals(False)
+
+        def _output_tables(self) -> tuple[QTableWidget, QTableWidget, QTableWidget]:
+            return (self.summary, self.capability, self.stresses)
+
+        def _clear_output_selection(self) -> None:
+            self._last_output_table = None
+            for table in self._output_tables():
+                table.blockSignals(True)
+                table.clearSelection()
+                table.blockSignals(False)
+
+        def _all_input_widgets(self) -> list[QWidget]:
+            return [
+                self.reference,
+                self.screw_type,
+                self.size,
+                self.material,
+                self.manual_yield,
+                self.pcd,
+                self.screw_count,
+                self.thread,
+                self.pitch,
+                self.shank,
+                self.groove,
+                self.contact,
+                self.thread_type,
+                self.shear_plane,
+                self.joint_type,
+                self.pack_thickness,
+                self.nut_contact_mode,
+                self.custom_contact,
+                self.sleeve_od,
+                self.sleeve_material,
+                self.sleeve_yield,
+                self.tapped_hole_yield,
+                self.screw_nut_mu,
+                self.nut_part_mu,
+                self.part_part_mu,
+                self.continuous_torque,
+                self.peak_torque,
+                self.momentary_torque,
+                self.tightening_torque,
+                self.percent_tys,
+                self.use_standard_torque,
+                self.thread_engagement,
+            ]
+
+        def _project_widgets(self) -> list[QWidget]:
+            return [*self._all_input_widgets(), self.criteria_standard]
+
+        def _project_state(self) -> dict:
+            return {
+                "reference": self.reference.text(),
+                "screw_type": self.screw_type.currentText(),
+                "size": self.size.currentText(),
+                "material": self.material.currentText(),
+                "manual_yield": self.manual_yield.value(),
+                "pcd": self.pcd.value(),
+                "screw_count": self.screw_count.value(),
+                "thread": self.thread.value(),
+                "pitch": self.pitch.value(),
+                "shank": self.shank.value(),
+                "groove": self.groove.currentText(),
+                "contact": self.contact.value(),
+                "thread_type": self.thread_type.currentText(),
+                "shear_plane": self.shear_plane.currentText(),
+                "joint_type": self.joint_type.currentText(),
+                "pack_thickness": self.pack_thickness.currentText(),
+                "nut_contact_mode": self.nut_contact_mode.currentText(),
+                "custom_contact": self.custom_contact.currentText(),
+                "sleeve_od": self.sleeve_od.currentText(),
+                "sleeve_material": self.sleeve_material.currentText(),
+                "sleeve_yield": self.sleeve_yield.value(),
+                "tapped_hole_yield": self.tapped_hole_yield.currentText(),
+                "screw_nut_preset": self.screw_nut_preset.currentText(),
+                "nut_part_preset": self.nut_part_preset.currentText(),
+                "part_part_preset": self.part_part_preset.currentText(),
+                "screw_nut_mu": self.screw_nut_mu.value(),
+                "nut_part_mu": self.nut_part_mu.value(),
+                "part_part_mu": self.part_part_mu.value(),
+                "continuous_torque": self.continuous_torque.value(),
+                "peak_torque": self.peak_torque.value(),
+                "momentary_torque": self.momentary_torque.value(),
+                "tightening_torque": self.tightening_torque.value(),
+                "percent_tys": self.percent_tys.value(),
+                "use_standard_torque": self.use_standard_torque.isChecked(),
+                "thread_engagement": self.thread_engagement.value(),
+                "checking_standard": self.criteria_standard.currentText(),
+            }
+
+        def _apply_project_state(self, state: dict) -> None:
+            self._applying_state = True
+            self._set_project_signals_blocked(True)
+            try:
+                self.reference.setText(str(state.get("reference", "")))
+                self._set_combo_text(self.screw_type, state.get("screw_type", "1512"))
+                screw_type = self.screw_type.currentText() or "1512"
+                self.size.clear()
+                self.size.addItems(list_ctp_sizes(self.conn, screw_type))
+                self._set_combo_text(self.size, state.get("size", "47xx"))
+                self._set_combo_text(self.material, state.get("material", self.material.currentText()))
+                self.manual_yield.setValue(float(state.get("manual_yield", self.manual_yield.value())))
+                self.pcd.setValue(float(state.get("pcd", self.pcd.value())))
+                self.screw_count.setValue(int(state.get("screw_count", self.screw_count.value())))
+                self.thread.setValue(float(state.get("thread", self.thread.value())))
+                self.pitch.setValue(float(state.get("pitch", self.pitch.value())))
+                self.shank.setValue(float(state.get("shank", self.shank.value())))
+                self.groove.setCurrentText(str(state.get("groove", self.groove.currentText())))
+                self.contact.setValue(float(state.get("contact", self.contact.value())))
+                self._set_combo_text(self.thread_type, state.get("thread_type", self.thread_type.currentText()))
+                self._set_combo_text(self.shear_plane, state.get("shear_plane", self.shear_plane.currentText()))
+                self._set_combo_text(self.joint_type, state.get("joint_type", self.joint_type.currentText()))
+                self.pack_thickness.setCurrentText(str(state.get("pack_thickness", self.pack_thickness.currentText())))
+                self._set_combo_text(self.nut_contact_mode, state.get("nut_contact_mode", self.nut_contact_mode.currentText()))
+                self.custom_contact.setCurrentText(str(state.get("custom_contact", self.custom_contact.currentText())))
+                self.sleeve_od.setCurrentText(str(state.get("sleeve_od", self.sleeve_od.currentText())))
+                self._set_combo_text(self.sleeve_material, state.get("sleeve_material", self.sleeve_material.currentText()))
+                self.sleeve_yield.setValue(float(state.get("sleeve_yield", self.sleeve_yield.value())))
+                self.tapped_hole_yield.setCurrentText(str(state.get("tapped_hole_yield", self.tapped_hole_yield.currentText())))
+                self._set_combo_text(self.screw_nut_preset, state.get("screw_nut_preset", self.screw_nut_preset.currentText()))
+                self._set_combo_text(self.nut_part_preset, state.get("nut_part_preset", self.nut_part_preset.currentText()))
+                self._set_combo_text(self.part_part_preset, state.get("part_part_preset", self.part_part_preset.currentText()))
+                self.screw_nut_mu.setValue(float(state.get("screw_nut_mu", self.screw_nut_mu.value())))
+                self.nut_part_mu.setValue(float(state.get("nut_part_mu", self.nut_part_mu.value())))
+                self.part_part_mu.setValue(float(state.get("part_part_mu", self.part_part_mu.value())))
+                self.continuous_torque.setValue(float(state.get("continuous_torque", self.continuous_torque.value())))
+                self.peak_torque.setValue(float(state.get("peak_torque", self.peak_torque.value())))
+                self.momentary_torque.setValue(float(state.get("momentary_torque", self.momentary_torque.value())))
+                self.tightening_torque.setValue(float(state.get("tightening_torque", self.tightening_torque.value())))
+                self.percent_tys.setValue(float(state.get("percent_tys", self.percent_tys.value())))
+                self.use_standard_torque.setChecked(bool(state.get("use_standard_torque", self.use_standard_torque.isChecked())))
+                self.thread_engagement.setValue(float(state.get("thread_engagement", self.thread_engagement.value())))
+                self._set_combo_text(self.criteria_standard, state.get("checking_standard", self.criteria_standard.currentText()))
+            finally:
+                self._set_project_signals_blocked(False)
+            try:
+                self._sync_joint_geometry()
+                self._sync_nut_contact()
+                self._sync_sleeve_fields()
+            finally:
+                self._applying_state = False
+            self.update_calculation()
+            self._last_state = self._project_state()
+            self._update_action_state()
+
+        def _set_combo_text(self, combo: QComboBox, value: object) -> None:
+            text = str(value)
+            index = combo.findText(text)
+            if index >= 0:
+                combo.setCurrentIndex(index)
+            elif combo.isEditable():
+                combo.setCurrentText(text)
+
+        def _set_project_signals_blocked(self, blocked: bool) -> None:
+            for widget in self._project_widgets():
+                widget.blockSignals(blocked)
+
+        def _input_changed(self, *_args) -> None:
+            if self._applying_state:
+                return
+            current = self._project_state()
+            if self._last_state is not None and current != self._last_state:
+                self._undo_stack.append(self._last_state)
+                self._undo_stack = self._undo_stack[-100:]
+                self._redo_stack.clear()
+                self._last_state = current
+            self._update_action_state()
+            self.update_calculation()
+
+        def _push_current_state_for_undo(self) -> None:
+            if self._applying_state:
+                return
+            current = self._project_state()
+            if not self._undo_stack or self._undo_stack[-1] != current:
+                self._undo_stack.append(current)
+                self._undo_stack = self._undo_stack[-100:]
+            self._redo_stack.clear()
+            self._last_state = current
+            self._update_action_state()
+
+        def _undo(self) -> None:
+            if not self._undo_stack:
+                return
+            current = self._project_state()
+            previous = self._undo_stack.pop()
+            if current != previous:
+                self._redo_stack.append(current)
+            self._apply_project_state(previous)
+
+        def _redo(self) -> None:
+            if not self._redo_stack:
+                return
+            current = self._project_state()
+            next_state = self._redo_stack.pop()
+            if current != next_state:
+                self._undo_stack.append(current)
+            self._apply_project_state(next_state)
+
+        def _open_project(self) -> None:
+            filename, _selected_filter = QFileDialog.getOpenFileName(
+                self,
+                "Open Project",
+                str(self._default_project_directory()),
+                "CTP 0007 Project (*.ctp0007.json);;JSON Files (*.json);;All Files (*)",
             )
+            if not filename:
+                return
+            path = Path(filename)
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                state = payload.get("inputs") if isinstance(payload, dict) else None
+                if not isinstance(state, dict):
+                    raise ValueError("Project file does not contain saved inputs.")
+            except Exception as exc:
+                QMessageBox.warning(self, "Open Project", f"Could not open project file:\n{exc}")
+                return
+            self._push_current_state_for_undo()
+            self._project_path = path
+            self._apply_project_state(state)
+            self._update_window_title()
+
+        def _save_project(self) -> None:
+            if self._project_path is None:
+                self._save_project_as()
+                return
+            self._write_project(self._project_path)
+
+        def _save_project_as(self) -> None:
+            filename, _selected_filter = QFileDialog.getSaveFileName(
+                self,
+                "Save Project As",
+                str(self._default_project_path()),
+                "CTP 0007 Project (*.ctp0007.json);;JSON Files (*.json);;All Files (*)",
+            )
+            if not filename:
+                return
+            path = self._with_project_suffix(Path(filename))
+            self._write_project(path)
+
+        def _write_project(self, path: Path) -> None:
+            payload = {
+                "format": APP_NAME,
+                "version": 1,
+                "inputs": self._project_state(),
+            }
+            try:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+            except Exception as exc:
+                QMessageBox.warning(self, "Save Project", f"Could not save project file:\n{exc}")
+                return
+            self._project_path = path
+            self._update_window_title()
+
+        def _default_project_directory(self) -> Path:
+            if self._project_path is not None:
+                return self._project_path.parent
+            return Path.cwd()
+
+        def _default_project_path(self) -> Path:
+            return self._default_project_directory() / self._project_filename_from_reference()
+
+        def _project_filename_from_reference(self) -> str:
+            name = self.reference.text().strip() or f"{APP_NAME} project"
+            name = re.sub(r'[<>:"/\\|?*]+', "_", name)
+            name = re.sub(r"\s+", " ", name).strip(" .")
+            if not name:
+                name = f"{APP_NAME} project"
+            return f"{name[:120]}.ctp0007.json"
+
+        def _with_project_suffix(self, path: Path) -> Path:
+            name = path.name.lower()
+            if name.endswith(".ctp0007.json") or name.endswith(".json"):
+                return path
+            return path.with_name(f"{path.name}.ctp0007.json")
+
+        def _update_window_title(self) -> None:
+            if self._project_path is None:
+                self.setWindowTitle(APP_NAME)
+            else:
+                self.setWindowTitle(f"{APP_NAME} - {self._project_path.name}")
+
+        def _sync_size_list(self) -> None:
+            if self._updating_sizes:
+                return
+            self._updating_sizes = True
+            current_type = self.screw_type.currentText() or "1512"
+            self.size.clear()
+            self.size.addItems(list_ctp_sizes(self.conn, current_type))
+            if current_type == "1512":
+                self.size.setCurrentText("47xx")
+            elif current_type == "SPECIAL":
+                self.size.setCurrentText("M16")
+            self._updating_sizes = False
+            self._load_record_defaults()
+
+        def _load_record_defaults(self) -> None:
+            if self._updating_sizes or not self.size.currentText():
+                return
+            try:
+                record = self._record()
+            except Exception:
+                return
+            self.thread.blockSignals(True)
+            self.pitch.blockSignals(True)
+            self.shank.blockSignals(True)
+            self.groove.blockSignals(True)
+            self.contact.blockSignals(True)
+            self.thread_engagement.blockSignals(True)
+            self.thread.setValue(record.thread_mm)
+            self.pitch.setValue(record.pitch_mm)
+            self.shank.setValue(record.shank_diameter_mm)
+            self._set_optional_diameter(self.groove, record.groove_diameter_mm)
+            self.contact.setValue(record.contact_diameter_mm)
+            self.thread_engagement.setValue(record.thread_mm * 1.2)
+            self.thread.blockSignals(False)
+            self.pitch.blockSignals(False)
+            self.shank.blockSignals(False)
+            self.groove.blockSignals(False)
+            self.contact.blockSignals(False)
+            self.thread_engagement.blockSignals(False)
+            self._sync_joint_geometry()
+            self._sync_nut_contact()
+            self._sync_sleeve_fields()
+            self.update_calculation()
+
+        def _load_material_yield(self) -> None:
+            self.manual_yield.blockSignals(True)
+            self.manual_yield.setValue(get_material_yield(self.conn, self.material.currentText()))
+            self.manual_yield.blockSignals(False)
+            self.update_calculation()
+
+        def _load_sleeve_yield(self) -> None:
+            if self.sleeve_material.currentText() == "N/A":
+                return
+            self.sleeve_yield.blockSignals(True)
+            self.sleeve_yield.setValue(SLEEVE_MATERIAL_YIELD_MPA[self.sleeve_material.currentText()])
+            self.sleeve_yield.blockSignals(False)
+            self.update_calculation()
+
+        def _sync_sleeve_fields(self) -> None:
+            try:
+                sleeve_od = self._optional_diameter_value(self.sleeve_od, "Sleeve OD")
+            except ValueError:
+                sleeve_od = 0.0
+            if sleeve_od <= 0:
+                self.sleeve_material.blockSignals(True)
+                self.sleeve_yield.blockSignals(True)
+                self.sleeve_material.setCurrentText("N/A")
+                self.sleeve_yield.setValue(0.0)
+                self.sleeve_material.blockSignals(False)
+                self.sleeve_yield.blockSignals(False)
+                self.sleeve_material.setEnabled(False)
+                self.sleeve_yield.setEnabled(False)
+            else:
+                self.sleeve_material.setEnabled(True)
+                self.sleeve_yield.setEnabled(True)
+                if self.sleeve_material.currentText() == "N/A":
+                    self.sleeve_material.blockSignals(True)
+                    self.sleeve_material.setCurrentText("GMC 0336 - 650 MPa")
+                    self.sleeve_material.blockSignals(False)
+                    self.sleeve_yield.blockSignals(True)
+                    self.sleeve_yield.setValue(SLEEVE_MATERIAL_YIELD_MPA[self.sleeve_material.currentText()])
+                    self.sleeve_yield.blockSignals(False)
+
+        def _sync_joint_geometry(self) -> None:
+            joint_type = self.joint_type.currentText()
+            if joint_type == "Stripper bolt":
+                self.pack_thickness.blockSignals(True)
+                self._set_optional_diameter(self.pack_thickness, 0)
+                self.pack_thickness.blockSignals(False)
+                self.pack_thickness.setEnabled(False)
+                leverarm = 0.05
+            else:
+                self.pack_thickness.setEnabled(True)
+                if self.pack_thickness.currentText().strip().lower() in {"n/a", "na", "none"}:
+                    self.pack_thickness.blockSignals(True)
+                    self.pack_thickness.setCurrentText("")
+                    self.pack_thickness.blockSignals(False)
+                try:
+                    pack_thickness = self._optional_diameter_value(self.pack_thickness, "Pack thickness")
+                except ValueError:
+                    pack_thickness = 0.0
+                leverarm = 0.15 * pack_thickness
+            self.leverarm.blockSignals(True)
+            self.leverarm.setValue(leverarm)
+            self.leverarm.blockSignals(False)
+
+        def _sync_nut_contact(self) -> None:
+            self.custom_contact.blockSignals(True)
+            if self.nut_contact_mode.currentText() == "Standard":
+                self._set_optional_diameter(self.custom_contact, 0)
+            elif self.custom_contact.currentText().strip().lower() in {"n/a", "na", "none"}:
+                self.custom_contact.setCurrentText("")
+            self.custom_contact.blockSignals(False)
+
+        def _apply_friction_presets(self) -> None:
+            mapping = [
+                (self.screw_nut_preset, self.screw_nut_mu),
+                (self.nut_part_preset, self.nut_part_mu),
+                (self.part_part_preset, self.part_part_mu),
+            ]
+            for combo, spin in mapping:
+                if combo.currentText() != "Custom":
+                    spin.setValue(get_friction_factor(self.conn, combo.currentText()))
+
+        def _record(self):
+            return get_ctp_screw_record(
+                self.conn,
+                self.screw_type.currentText(),
+                self.size.currentText(),
+            )
+
+        def inputs(self) -> CtpInputs:
+            return CtpInputs(
+                reference=self.reference.text(),
+                screw_type=self.screw_type.currentText(),
+                size=self.size.currentText(),
+                pcd_mm=self.pcd.value(),
+                screw_count=self.screw_count.value(),
+                material_code=self.material.currentText(),
+                manual_yield_mpa=self.manual_yield.value() or None,
+                thread_mm=self.thread.value(),
+                pitch_mm=self.pitch.value(),
+                shank_diameter_mm=self.shank.value(),
+                groove_diameter_mm=self._optional_diameter_value(self.groove, "Groove diameter"),
+                contact_diameter_mm=self.contact.value(),
+                thread_type=self.thread_type.currentText(),
+                screw_nut_friction=self.screw_nut_mu.value(),
+                nut_part_friction=self.nut_part_mu.value(),
+                part_part_friction=self.part_part_mu.value(),
+                continuous_torque_nm=self.continuous_torque.value(),
+                peak_torque_nm=self.peak_torque.value(),
+                momentary_torque_nm=self.momentary_torque.value(),
+                tightening_torque_nm=self.tightening_torque.value(),
+                percent_tys=self.percent_tys.value(),
+                use_standard_torque=self.use_standard_torque.isChecked(),
+                shear_plane=self.shear_plane.currentText(),
+                leverarm_mm=self.leverarm.value(),
+                joint_type=self.joint_type.currentText(),
+                pack_thickness_mm=(
+                    0.0
+                    if self.joint_type.currentText() == "Stripper bolt"
+                    else self._optional_diameter_value(self.pack_thickness, "Pack thickness")
+                ),
+                nut_contact_mode=self.nut_contact_mode.currentText(),
+                custom_nut_contact_diameter_mm=(
+                    0.0
+                    if self.nut_contact_mode.currentText() == "Standard"
+                    else self._optional_diameter_value(self.custom_contact, "Special contact diameter")
+                ),
+                sleeve_outer_diameter_mm=self._optional_diameter_value(self.sleeve_od, "Sleeve OD"),
+                sleeve_yield_mpa=self.sleeve_yield.value(),
+                tapped_hole_yield_mpa=self._optional_diameter_value(self.tapped_hole_yield, "Tapped hole yield"),
+                thread_engagement_mode="Thread" if self.thread_engagement.value() == 0 else "Manual",
+                thread_engagement_mm=self.thread_engagement.value(),
+                checking_standard=self.criteria_standard.currentText(),
+                screw_nut_friction_source=self.screw_nut_preset.currentText(),
+            )
+
+        def _current_result(self) -> tuple[CtpInputs, object, CtpResult]:
+            record = self._record()
+            inputs = self.inputs()
+            result = calculate_ctp(inputs, record, get_material_yield(self.conn, inputs.material_code))
+            return inputs, record, result
+
+        def _open_goal_seek(self) -> None:
+            try:
+                inputs, record, result = self._current_result()
+            except Exception as exc:
+                QMessageBox.warning(self, "Goal Seek", str(exc))
+                return
+
+            selected_output = self._selected_goal_output(result)
+            input_options = self._goal_input_options()
+            if selected_output is None:
+                QMessageBox.warning(
+                    self,
+                    "Goal Seek",
+                    "Select one numeric output value from the result tables first.",
+                )
+                return
+            if not input_options:
+                QMessageBox.warning(self, "Goal Seek", "No input parameters are available to change.")
+                return
+
+            output_label, getter, current_value = selected_output
+            target, accepted = QInputDialog.getDouble(
+                self,
+                "Goal Seek",
+                f"Set target value for:\n{output_label}",
+                current_value,
+                -1_000_000_000_000.0,
+                1_000_000_000_000.0,
+                6,
+            )
+            if not accepted:
+                return
+
+            labels = [option["label"] for option in input_options]
+            selected_label, accepted = QInputDialog.getItem(
+                self,
+                "Goal Seek",
+                "Change which input parameter?",
+                labels,
+                0,
+                False,
+            )
+            if not accepted:
+                return
+            option = input_options[labels.index(selected_label)]
+
+            try:
+                solution, achieved, exact = self._solve_goal(
+                    inputs,
+                    record,
+                    option,
+                    getter,
+                    target,
+                    option["minimum"],
+                    option["maximum"],
+                )
+                self._set_goal_input_value(option, solution)
+                self.update_calculation()
+                self._clear_output_selection()
+            except Exception as exc:
+                QMessageBox.warning(self, "Goal Seek", str(exc))
+                return
+
+            status = "Solved" if exact else "Closest result"
+            QMessageBox.information(
+                self,
+                "Goal Seek",
+                f"{status}\n"
+                f"{option['label']} = {self._format_goal_number(solution, option)}\n"
+                f"{output_label} = {achieved:.6g}",
+            )
+
+        def _selected_goal_output(self, result: CtpResult) -> tuple[str, object, float] | None:
+            tables = [self._last_output_table, self.summary, self.capability, self.stresses]
+            seen: set[int] = set()
+            for table in tables:
+                if table is None or id(table) in seen:
+                    continue
+                seen.add(id(table))
+                for index in table.selectedIndexes():
+                    output = self._goal_output_from_cell(table, index.row(), index.column(), result)
+                    if output is not None:
+                        return output
+            return None
+
+        def _goal_output_from_cell(
+            self,
+            table: QTableWidget,
+            row: int,
+            column: int,
+            result: CtpResult,
+        ) -> tuple[str, object, float] | None:
+            if table is self.summary:
+                return self._summary_goal_output(row, result)
+            if table is self.capability:
+                return self._capability_goal_output(row, column, result)
+            if table is self.stresses:
+                return self._stresses_goal_output(row, result)
+            return None
+
+        def _summary_goal_output(self, row: int, result: CtpResult) -> tuple[str, object, float] | None:
+            mappings = {
+                2: ("Screw Data Summary - Tensile stress area mm2", lambda item: item.tensile_stress_area_mm2),
+                3: ("Screw Data Summary - Shear-bending dia mm", lambda item: item.shear_bending_diameter_mm),
+                4: ("Screw Data Summary - Contact dia mm", lambda item: item.contact_diameter_mm),
+                5: ("Screw Data Summary - Contact radius mm", lambda item: item.contact_diameter_mm / 2.0),
+                6: ("Screw Data Summary - Average nut radius mm", lambda item: item.average_nut_radius_mm),
+                7: ("Screw Data Summary - Axial pretension N", lambda item: item.axial_pretension_n),
+                8: ("Screw Data Summary - Tightening torque Nm", lambda item: item.tightening_torque_nm),
+                9: ("Screw Data Summary - Preload % TYS", lambda item: item.preload_percent_tys),
+                10: ("Screw Data Summary - Preload % limit", lambda item: item.preload_percent_tys_limit),
+            }
+            return self._numeric_goal_output(result, mappings.get(row))
+
+        def _capability_goal_output(
+            self,
+            row: int,
+            column: int,
+            result: CtpResult,
+        ) -> tuple[str, object, float] | None:
+            if row < 0 or row >= len(result.torque_cases):
+                return None
+            case = result.torque_cases[row]
+            prefix = f"Bolted Joint Capability - {case.name}"
+            mappings = {
+                1: (f"{prefix} Duty Nm", lambda item, row=row: item.torque_cases[row].duty_torque_nm),
+                2: (f"{prefix} Friction Nm", lambda item, row=row: item.torque_cases[row].friction_torque_nm),
+                3: (
+                    f"{prefix} Ratio %",
+                    lambda item, row=row: (
+                        item.torque_cases[row].friction_ratio * 100
+                        if isinstance(item.torque_cases[row].friction_ratio, float)
+                        else float("nan")
+                    ),
+                ),
+                4: (f"{prefix} Residual Nm", lambda item, row=row: item.torque_cases[row].residual_torque_nm),
+                5: (f"{prefix} Shear N", lambda item, row=row: item.torque_cases[row].shear_load_per_joint_n),
+                6: (
+                    f"{prefix} Sleeve SF",
+                    lambda item, row=row: (
+                        item.torque_cases[row].sleeve_safety_factor
+                        if isinstance(item.torque_cases[row].sleeve_safety_factor, float)
+                        else float("nan")
+                    ),
+                ),
+                7: (f"{prefix} Maxi Stress (VM) MPa", lambda item, row=row: item.torque_cases[row].bolt_von_mises_mpa),
+                8: (f"{prefix} Bolt SF", lambda item, row=row: item.torque_cases[row].bolt_safety_factor),
+            }
+            return self._numeric_goal_output(result, mappings.get(column))
+
+        def _stresses_goal_output(self, row: int, result: CtpResult) -> tuple[str, object, float] | None:
+            mappings = {
+                0: (
+                    "Stresses and Checks - Groove assembly SF",
+                    lambda item: item.groove_safety_factor if isinstance(item.groove_safety_factor, float) else float("nan"),
+                ),
+                1: ("Stresses and Checks - Thread-root assembly SF", lambda item: item.thread_root_safety_factor),
+                2: ("Stresses and Checks - Thread pull-out stress MPa", lambda item: item.thread_pullout_stress_mpa),
+                3: ("Stresses and Checks - Minimum safety factor", lambda item: item.minimum_safety_factor),
+            }
+            return self._numeric_goal_output(result, mappings.get(row))
+
+        def _numeric_goal_output(
+            self,
+            result: CtpResult,
+            mapping: tuple[str, object] | None,
+        ) -> tuple[str, object, float] | None:
+            if mapping is None:
+                return None
+            label, getter = mapping
+            try:
+                value = getter(result)
+            except Exception:
+                return None
+            if isinstance(value, (int, float)) and math.isfinite(float(value)):
+                return label, getter, float(value)
+            return None
+
+        def _goal_input_options(self) -> list[dict]:
+            options: list[dict] = []
+
+            def add_widget(label: str, field: str, widget) -> None:
+                if not widget.isEnabled():
+                    return
+                kind = "int" if isinstance(widget, QSpinBox) else "float"
+                decimals = 0 if kind == "int" else widget.decimals()
+                options.append(
+                    {
+                        "label": label,
+                        "field": field,
+                        "widget": widget,
+                        "kind": kind,
+                        "current": float(widget.value()),
+                        "minimum": float(widget.minimum()),
+                        "maximum": float(widget.maximum()),
+                        "decimals": decimals,
+                    }
+                )
+
+            def add_optional(label: str, field: str, widget: QComboBox) -> None:
+                if not widget.isEnabled():
+                    return
+                try:
+                    current = self._optional_diameter_value(widget, label)
+                except ValueError:
+                    current = 0.0
+                options.append(
+                    {
+                        "label": label,
+                        "field": field,
+                        "widget": widget,
+                        "kind": "optional",
+                        "current": current,
+                        "minimum": float(widget.property("minimum")),
+                        "maximum": float(widget.property("maximum")),
+                        "decimals": int(widget.property("decimals")),
+                    }
+                )
+
+            add_widget("TYS MPa", "manual_yield_mpa", self.manual_yield)
+            add_widget("PCD mm", "pcd_mm", self.pcd)
+            add_widget("Screw count", "screw_count", self.screw_count)
+            if self.screw_type.currentText() == "SPECIAL":
+                add_widget("Thread mm", "thread_mm", self.thread)
+                add_widget("Pitch mm", "pitch_mm", self.pitch)
+                add_widget("Shank dia mm", "shank_diameter_mm", self.shank)
+                add_widget("Contact dia mm", "contact_diameter_mm", self.contact)
+            add_optional("Groove dia mm", "groove_diameter_mm", self.groove)
+            if self.joint_type.currentText() != "Stripper bolt":
+                add_optional("Pack thickness mm", "pack_thickness_mm", self.pack_thickness)
+            if self.nut_contact_mode.currentText() == "Special":
+                add_optional("Special contact dia", "custom_nut_contact_diameter_mm", self.custom_contact)
+            add_optional("Sleeve OD mm", "sleeve_outer_diameter_mm", self.sleeve_od)
+            add_widget("Sleeve yield MPa", "sleeve_yield_mpa", self.sleeve_yield)
+            add_widget("Thread engagement mm", "thread_engagement_mm", self.thread_engagement)
+            add_widget("Screw/nut mu", "screw_nut_friction", self.screw_nut_mu)
+            add_widget("Nut/part mu", "nut_part_friction", self.nut_part_mu)
+            add_widget("Part/part mu", "part_part_friction", self.part_part_mu)
+            add_widget("Continuous Nm", "continuous_torque_nm", self.continuous_torque)
+            add_widget("Peak Nm", "peak_torque_nm", self.peak_torque)
+            add_widget("Momentary Nm", "momentary_torque_nm", self.momentary_torque)
+            add_widget("Tightening Nm", "tightening_torque_nm", self.tightening_torque)
+            add_widget("% TYS", "percent_tys", self.percent_tys)
+            return options
+
+        def _solve_goal(
+            self,
+            base_inputs: CtpInputs,
+            record,
+            option: dict,
+            getter,
+            target: float,
+            lower: float,
+            upper: float,
+        ) -> tuple[float, float, bool]:
+            if lower > upper:
+                lower, upper = upper, lower
+            if option["kind"] == "int":
+                return self._solve_integer_goal(base_inputs, record, option, getter, target, lower, upper)
+            return self._solve_float_goal(base_inputs, record, option, getter, target, lower, upper)
+
+        def _solve_integer_goal(
+            self,
+            base_inputs: CtpInputs,
+            record,
+            option: dict,
+            getter,
+            target: float,
+            lower: float,
+            upper: float,
+        ) -> tuple[float, float, bool]:
+            lower_int = math.ceil(lower)
+            upper_int = math.floor(upper)
+            if lower_int > upper_int:
+                raise ValueError("Selected range does not contain an integer value.")
+            span = upper_int - lower_int
+            if span <= 20000:
+                candidates = range(lower_int, upper_int + 1)
+            else:
+                sampled = {
+                    int(round(lower_int + span * index / 500))
+                    for index in range(501)
+                }
+                sampled.add(int(round(option["current"])))
+                candidates = sorted(value for value in sampled if lower_int <= value <= upper_int)
+
+            tolerance = self._goal_tolerance(target)
+            best: tuple[float, float, float] | None = None
+            for candidate in candidates:
+                try:
+                    residual, achieved = self._goal_residual(
+                        base_inputs,
+                        record,
+                        option,
+                        getter,
+                        float(candidate),
+                        target,
+                    )
+                except Exception:
+                    continue
+                score = abs(residual)
+                if best is None or score < best[0]:
+                    best = (score, float(candidate), achieved)
+                if score <= tolerance:
+                    return float(candidate), achieved, True
+            if best is None:
+                raise ValueError("No valid calculation in the selected input range.")
+            return best[1], best[2], False
+
+        def _solve_float_goal(
+            self,
+            base_inputs: CtpInputs,
+            record,
+            option: dict,
+            getter,
+            target: float,
+            lower: float,
+            upper: float,
+        ) -> tuple[float, float, bool]:
+            if math.isclose(lower, upper):
+                raise ValueError("Lower and upper bounds must be different.")
+            tolerance = self._goal_tolerance(target)
+            points = [lower + (upper - lower) * index / 80 for index in range(81)]
+            if lower <= option["current"] <= upper:
+                points.append(option["current"])
+            points = sorted({round(point, 12) for point in points})
+            best: tuple[float, float, float] | None = None
+            bracket: tuple[float, float, float, float] | None = None
+            previous: tuple[float, float] | None = None
+
+            for point in points:
+                try:
+                    residual, achieved = self._goal_residual(base_inputs, record, option, getter, point, target)
+                except Exception:
+                    continue
+                score = abs(residual)
+                if best is None or score < best[0]:
+                    best = (score, point, achieved)
+                if score <= tolerance:
+                    return point, achieved, True
+                if previous is not None and previous[1] * residual <= 0:
+                    bracket = (previous[0], point, previous[1], residual)
+                    break
+                previous = (point, residual)
+
+            if bracket is None:
+                if best is None:
+                    raise ValueError("No valid calculation in the selected input range.")
+                return best[1], best[2], False
+
+            low, high, low_residual, _high_residual = bracket
+            for _iteration in range(80):
+                middle = (low + high) / 2.0
+                residual, achieved = self._goal_residual(base_inputs, record, option, getter, middle, target)
+                score = abs(residual)
+                if best is None or score < best[0]:
+                    best = (score, middle, achieved)
+                if score <= tolerance:
+                    return middle, achieved, True
+                if low_residual * residual <= 0:
+                    high = middle
+                else:
+                    low = middle
+                    low_residual = residual
+
+            if best is None:
+                raise ValueError("No valid calculation in the selected input range.")
+            return best[1], best[2], best[0] <= tolerance
+
+        def _goal_residual(
+            self,
+            base_inputs: CtpInputs,
+            record,
+            option: dict,
+            getter,
+            value: float,
+            target: float,
+        ) -> tuple[float, float]:
+            inputs = self._goal_inputs_with_value(base_inputs, option["field"], value)
+            result = calculate_ctp(inputs, record, get_material_yield(self.conn, inputs.material_code))
+            achieved = getter(result)
+            if not isinstance(achieved, (int, float)) or not math.isfinite(float(achieved)):
+                raise ValueError("Selected result is not numeric for this input value.")
+            achieved = float(achieved)
+            return achieved - target, achieved
+
+        def _goal_inputs_with_value(self, base_inputs: CtpInputs, field: str, value: float) -> CtpInputs:
+            if field == "screw_count":
+                value = int(round(value))
+            updates = {field: value}
+            if field == "manual_yield_mpa" and value <= 0:
+                updates[field] = None
+            if field == "tightening_torque_nm":
+                updates["percent_tys"] = 0.0
+            elif field == "percent_tys":
+                updates["tightening_torque_nm"] = 0.0
+                updates["use_standard_torque"] = False
+            elif field == "thread_engagement_mm":
+                updates["thread_engagement_mode"] = "Thread" if value <= 0 else "Manual"
+            return replace(base_inputs, **updates)
+
+        def _set_goal_input_value(self, option: dict, value: float) -> None:
+            self._push_current_state_for_undo()
+            field = option["field"]
+            if field == "tightening_torque_nm":
+                self.percent_tys.blockSignals(True)
+                self.percent_tys.setValue(0.0)
+                self.percent_tys.blockSignals(False)
+            elif field == "percent_tys":
+                self.tightening_torque.blockSignals(True)
+                self.tightening_torque.setValue(0.0)
+                self.tightening_torque.blockSignals(False)
+                self.use_standard_torque.blockSignals(True)
+                self.use_standard_torque.setChecked(False)
+                self.use_standard_torque.blockSignals(False)
+
+            widget = option["widget"]
+            widget.blockSignals(True)
+            if option["kind"] == "optional":
+                self._set_optional_diameter(widget, value)
+            elif option["kind"] == "int":
+                widget.setValue(int(round(value)))
+            else:
+                widget.setValue(value)
+            widget.blockSignals(False)
+
+            if field == "pack_thickness_mm":
+                self._sync_joint_geometry()
+            elif field == "sleeve_outer_diameter_mm":
+                self._sync_sleeve_fields()
+            elif field == "custom_nut_contact_diameter_mm":
+                self._sync_nut_contact()
+            self._last_state = self._project_state()
+            self._update_action_state()
+
+        def _format_goal_number(self, value: float, option: dict) -> str:
+            if option["kind"] == "int":
+                return str(int(round(value)))
+            decimals = min(max(int(option.get("decimals", 6)), 0), 6)
+            text = f"{value:.{decimals}f}"
+            return text.rstrip("0").rstrip(".") if "." in text else text
+
+        def _goal_tolerance(self, target: float) -> float:
+            return max(1e-6, abs(target) * 1e-7)
 
         def update_calculation(self) -> None:
             try:
-                bolt = get_bolt_size(self.conn, self.bolt_size.currentText())
-                prop = get_property_class(self.conn, self.property_class.currentText())
-                inputs = self.inputs()
-                result = calculate(inputs, bolt, prop)
+                inputs, record, result = self._current_result()
             except Exception as exc:
-                QMessageBox.warning(self, "Input error", str(exc))
+                if hasattr(self, "checks"):
+                    self.checks.setText(str(exc))
                 return
+            self._render_result(inputs, record, result)
 
+        def _render_result(self, inputs: CtpInputs, record, result: CtpResult) -> None:
             self.spec.setText(
-                f"{bolt.designation} x {bolt.pitch_mm:g} | As {bolt.tensile_area_mm2:g} mm2 | "
-                f"class {prop.name}, yield {prop.yield_mpa:g} MPa | "
-                f"governing: {GOVERNING_CASE_DISPLAY.get(result.governing_torque_case, result.governing_torque_case)}"
+                f"{inputs.reference} | Type {record.screw_type} size {record.size} | "
+                f"yield {result.tensile_yield_mpa:g} MPa"
             )
-            self.status.setText("OK" if result.warnings[0] == "All current checks pass." else "Check")
-            self.status.setProperty("warning", result.warnings[0] != "All current checks pass.")
+            ok = result.warnings == ("All current checks pass.",)
+            self.status.setText("OK" if ok else "Check")
+            self.status.setProperty("warning", not ok)
             self.status.style().unpolish(self.status)
             self.status.style().polish(self.status)
-            self.diagram.set_state(inputs, result)
+            self._fill_summary(result)
+            self._fill_capability(result)
+            self._fill_stresses(result)
+            self.checks.setText("\n".join(f"- {item}" for item in result.warnings))
 
-            self.cards["slip_sf"].set_value(f"{result.slip_safety_factor:.2f}", result.slip_safety_factor < 1)
-            self.cards["slip_capacity"].set_value(f"{result.slip_capacity_nm:,.0f} N*m")
-            self.cards["design_torque"].set_value(f"{result.design_torque_nm:,.0f} N*m")
-            self.cards["governing_case"].set_value(
-                GOVERNING_CASE_DISPLAY.get(result.governing_torque_case, result.governing_torque_case)
-            )
-            self.cards["minimum_sf"].set_value(f"{result.minimum_service_factor:g}x", inputs.service_factor < result.minimum_service_factor)
-            self.cards["residual"].set_value(f"{result.residual_pretension_n:,.0f} N")
-            self.cards["service_residual"].set_value(f"{result.service_residual_pretension_n:,.0f} N", result.service_residual_pretension_n <= 0)
-            self.cards["required_initial"].set_value(f"{result.required_initial_preload_per_bolt_n:,.0f} N", result.required_preload_yield_utilization > inputs.max_yield_utilization)
-            self.cards["yield_load"].set_value(f"{result.bolt_yield_load_n:,.0f} N")
-            self.cards["assembly_util"].set_value(f"{result.assembly_yield_utilization * 100:.1f}%", result.assembly_yield_utilization > inputs.max_yield_utilization)
-            self.cards["service_util"].set_value(f"{result.service_yield_utilization * 100:.1f}%", result.service_yield_utilization > inputs.max_yield_utilization)
+        def _set_item(
+            self,
+            table: QTableWidget,
+            row: int,
+            column: int,
+            text: str,
+            selectable: bool = False,
+        ) -> None:
+            item = QTableWidgetItem(text)
+            item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            flags = Qt.ItemFlag.ItemIsEnabled
+            if selectable:
+                flags |= Qt.ItemFlag.ItemIsSelectable
+            item.setFlags(flags)
+            table.setItem(row, column, item)
 
-            rec = recommend_bolt_size(self.conn, prop, result.required_initial_preload_per_bolt_n, inputs.max_yield_utilization)
-            rec_text = (
-                f"Minimum database size at {inputs.max_yield_utilization * 100:.0f}% yield: "
-                f"{rec.designation} (As {rec.tensile_area_mm2:g} mm2)."
-                if rec
-                else "No database bolt size satisfies the required preload within the selected yield limit."
-            )
-            standard_text = "\n".join(
-                f"- {item}" for item in standard_basis_lines(inputs.standard_profile)
-            )
-            checks_text = "\n".join(f"- {item}" for item in result.warnings)
-            self.checks.setText(
-                f"{rec_text}\n\nStandards basis:\n{standard_text}\n\nChecks:\n{checks_text}"
-            )
+        def _fill_summary(self, result: CtpResult) -> None:
+            rows = [
+                ("Thread / pitch", f"M{result.thread_major_diameter_mm:g} x {result.pitch_mm:g}"),
+                ("Pitch / root dia", f"{result.pitch_diameter_mm:.3f} / {result.thread_root_diameter_mm:.3f} mm"),
+                ("Tensile stress area", f"{result.tensile_stress_area_mm2:.3f} mm2"),
+                ("Shear-bending dia", f"{result.shear_bending_diameter_mm:.3f} mm"),
+                ("Contact dia", f"{result.contact_diameter_mm:.3f} mm"),
+                ("Contact radius", f"{result.contact_diameter_mm / 2.0:.3f} mm"),
+                ("Average nut radius", f"{result.average_nut_radius_mm:.3f} mm"),
+                ("Axial pretension", f"{result.axial_pretension_n:,.0f} N"),
+                ("Tightening torque", f"{result.tightening_torque_nm:,.1f} Nm"),
+                ("Preload % TYS", f"{result.preload_percent_tys:.2f}%"),
+                ("Preload % limit", f"{result.preload_percent_tys_limit:.0f}%"),
+                ("Joint type / Leff", f"{result.joint_type} / {result.leverarm_mm:.3f} mm"),
+            ]
+            selectable_rows = {2, 3, 4, 5, 6, 7, 8, 9, 10}
+            self.summary.setRowCount(len(rows))
+            for row, (name, value) in enumerate(rows):
+                self._set_item(self.summary, row, 0, name)
+                self._set_item(self.summary, row, 1, value, row in selectable_rows)
+            self.summary.resizeColumnsToContents()
+            self.summary.resizeRowsToContents()
+
+        def _fill_capability(self, result: CtpResult) -> None:
+            self.capability.setRowCount(len(result.torque_cases))
+            for row, case in enumerate(result.torque_cases):
+                values = [
+                    case.name,
+                    f"{case.duty_torque_nm:,.0f}",
+                    f"{case.friction_torque_nm:,.0f}",
+                    f"{case.friction_ratio * 100:.1f}%" if isinstance(case.friction_ratio, float) else case.friction_ratio,
+                    f"{case.residual_torque_nm:,.0f}",
+                    f"{case.shear_load_per_joint_n:,.0f}",
+                    _format_sf(case.sleeve_safety_factor),
+                    f"{case.bolt_von_mises_mpa:.1f}",
+                    f"{case.bolt_safety_factor:.3f}",
+                ]
+                for column, value in enumerate(values):
+                    selectable = column != 0
+                    if column == 3 and not isinstance(case.friction_ratio, float):
+                        selectable = False
+                    if column == 6 and not isinstance(case.sleeve_safety_factor, float):
+                        selectable = False
+                    self._set_item(self.capability, row, column, value, selectable)
+            self.capability.resizeColumnsToContents()
+            self.capability.resizeRowsToContents()
+
+        def _fill_stresses(self, result: CtpResult) -> None:
+            rows = [
+                (
+                    f"Groove assembly SF (>={result.groove_yield_sf_limit:.2f})",
+                    _format_sf(result.groove_safety_factor),
+                    _status(result.groove_safety_factor, result.groove_yield_sf_limit),
+                ),
+                (
+                    f"Thread-root assembly SF (>={result.thread_root_required_sf_limit:.2f}, {result.thread_root_preferred_sf_limit:.2f} pref)",
+                    f"{result.thread_root_safety_factor:.3f}",
+                    _thread_root_status(result),
+                ),
+                (
+                    "Thread pull-out stress",
+                    f"{result.thread_pullout_stress_mpa:.1f} MPa",
+                    _tapped_hole_status(result),
+                ),
+                ("Minimum safety factor", f"{result.minimum_safety_factor:.3f}", "Info"),
+            ]
+            self.stresses.setRowCount(len(rows))
+            for row, values in enumerate(rows):
+                for column, value in enumerate(values):
+                    selectable = column == 1 and self._stresses_goal_output(row, result) is not None
+                    self._set_item(self.stresses, row, column, value, selectable)
+            self.stresses.resizeColumnsToContents()
+            self.stresses.resizeRowsToContents()
+
+    def _format_sf(value: float | str) -> str:
+        return f"{value:.3f}" if isinstance(value, float) else value
+
+    def _status(value: float | str, limit: float) -> str:
+        if not isinstance(value, float):
+            return "N/A"
+        return "Pass" if value >= limit else "Check"
+
+    def _thread_root_status(result: CtpResult) -> str:
+        if result.thread_root_safety_factor < result.thread_root_required_sf_limit:
+            return "Check"
+        if result.thread_root_safety_factor < result.thread_root_preferred_sf_limit:
+            return "Preferred"
+        return "Pass"
+
+    def _tapped_hole_status(result: CtpResult) -> str:
+        if result.tapped_hole_yield_mpa <= 0:
+            return "Tapped hole yield must exceed this"
+        return "Pass" if result.tapped_hole_yield_mpa >= result.thread_pullout_stress_mpa else "Check"
 
     app = QApplication(sys.argv)
     app.setStyleSheet(
         """
-        QWidget { background: #e8eef0; color: #142126; font-family: Arial; }
-        #inputRail { background: #1d252b; border-radius: 6px; }
-        #railTitle { background: #1d252b; color: white; font-size: 20px; font-weight: 800; padding: 8px 0 14px; }
-        #formLabel { background: #1d252b; color: #dce7e9; font-size: 12px; font-weight: 800; }
-        #unitLabel { background: #1d252b; color: #aebec3; min-width: 48px; }
-        QComboBox, QDoubleSpinBox, QSpinBox {
-            background: #273137; color: white; border: 1px solid #435058; border-radius: 5px; min-height: 28px; padding: 0 8px;
-        }
-        QPushButton { background: #0c8279; color: white; border: 0; border-radius: 5px; min-height: 38px; font-weight: 800; }
-        #workbench, #results { background: #fbfdfe; border: 1px solid #cdd8dc; border-radius: 6px; }
-        #eyebrow { color: #5d7078; font-size: 12px; font-weight: 800; }
-        #title { color: #142126; font-size: 23px; font-weight: 850; }
-        #spec { color: #5d7078; font-weight: 700; }
-        #status { background: #0c8279; color: white; border-radius: 5px; padding: 9px 18px; font-weight: 850; min-width: 70px; qproperty-alignment: AlignCenter; }
-        #status[warning="true"] { background: #d68b18; }
-        #resultsTitle { background: white; color: #142126; font-size: 22px; font-weight: 850; padding-bottom: 6px; }
-        #card { background: #fbfcfc; border: 1px solid #cdd8dc; border-radius: 6px; }
-        #metricTitle { background: #fbfcfc; color: #5d7078; font-size: 11px; font-weight: 850; }
-        #metricValue { background: #fbfcfc; color: #0c8279; font-family: Menlo; font-size: 21px; font-weight: 850; }
-        #metricValue[danger="true"] { color: #b9322e; }
-        QGroupBox { background: #f2f6f7; border: 1px solid #cdd8dc; border-radius: 6px; margin-top: 12px; font-weight: 800; }
+        QWidget { background: #eef2f4; color: #172126; font-family: Arial; }
+        QScrollArea#inputRail { background: #20272c; border: 1px solid #344047; border-radius: 6px; }
+        QScrollArea#inputRail > QWidget, #inputViewport, #inputBody { background: #20272c; }
+        #railTitle { background: #20272c; color: #f7fbfc; font-size: 21px; font-weight: 850; padding: 10px 4px 8px; }
+        QGroupBox { background: #f8fafb; border: 1px solid #c7d2d8; border-radius: 6px; margin-top: 12px; font-weight: 800; }
         QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 4px; }
+        #inputRail QGroupBox { background: #263039; border-color: #47545d; color: #f7fbfc; }
+        #inputRail QGroupBox::title { background: #20272c; color: #f7fbfc; padding: 0 6px; }
+        #inputRail QLabel { background: transparent; color: #f7fbfc; font-weight: 700; }
+        QLineEdit, QComboBox, QDoubleSpinBox, QSpinBox {
+            background: white; color: #172126; border: 1px solid #9fb0b8; border-radius: 5px; min-height: 26px; padding: 0 7px;
+        }
+        QCheckBox { background: transparent; color: #172126; font-weight: 700; }
+        #inputRail QCheckBox { color: #f7fbfc; }
+        #results { background: #fbfcfd; border: 1px solid #c7d2d8; border-radius: 6px; }
+        #title { background: transparent; color: #172126; font-size: 24px; font-weight: 850; }
+        #spec { background: transparent; color: #52646d; font-weight: 700; }
+        #status { background: #0b7f78; color: white; border-radius: 5px; padding: 9px 18px; font-weight: 850; min-width: 72px; qproperty-alignment: AlignCenter; }
+        #status[warning="true"] { background: #b96911; }
+        QPushButton { background: #315a72; color: white; border: 0; border-radius: 5px; min-height: 34px; padding: 0 16px; font-weight: 850; }
+        QTableWidget { background: white; alternate-background-color: #f3f7f8; gridline-color: #d7e0e4; border: 1px solid #c7d2d8; }
+        QHeaderView::section { background: #dde7ea; color: #172126; font-weight: 850; border: 0; padding: 5px; }
         """
     )
     window = MainWindow()
@@ -586,7 +1564,7 @@ def run_gui() -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Coupling fastener native desktop GUI")
+    parser = argparse.ArgumentParser(description=APP_NAME)
     parser.add_argument("--smoke-test", action="store_true", help="Run calculations without opening the GUI")
     args = parser.parse_args()
     if args.smoke_test:

@@ -1,6 +1,8 @@
-# Coupling Fastener Desktop App
+# CTP0007 Issue H
 
-Independent native desktop GUI app for friction-type flange coupling fastener sizing. The main app is built with PySide6/Qt and uses a local SQLite bolt database.
+Independent native desktop GUI app for CTP 0007-style bolted joint core
+checking. The main app is built with PySide6/Qt and uses a local SQLite
+database for migrated screw, material, friction, and legacy metric bolt data.
 
 The calculation workflow includes standard-aware guardrails derived from the local John Crane knowledge base:
 
@@ -15,7 +17,11 @@ The app uses a local SQLite database generated at startup:
 data/metric_bolts.sqlite
 ```
 
-The database stores ISO metric coarse bolt sizes from `M3` through `M48` with pitch and tensile stress area, plus bolt material property classes `8.8`, `10.9`, and `12.9`.
+The database stores ISO metric coarse bolt sizes from `M3` through `M48`, bolt
+property classes, CTP material yield strengths, CTP friction presets, and the
+CTP 0007 screw lookup rows migrated from the hidden `Donnees Vis` sheet. The
+type and size dropdowns are seeded in the same order as the spreadsheet lookup
+table, including the standard screw families and `SPECIAL` manual entry.
 
 ## Run
 
@@ -65,7 +71,13 @@ Optional Windows `.exe` build, from PowerShell on Windows:
 The executable is written to:
 
 ```text
-dist\CouplingFastenerDesign.exe
+dist\CTP0007 Issue H.exe
+```
+
+The detailed calculation procedure is documented in:
+
+```text
+docs/CTP0007_Issue_H_Calculation_Procedure.md
 ```
 
 Optional macOS `.app` build:
@@ -77,7 +89,20 @@ chmod +x build_macos_app.command
 
 ## Model
 
-Friction torque capacity:
+The main desktop workflow follows the CTP 0007 core calculation:
+
+- Select or enter screw identity, material, joint geometry, friction presets,
+  duty torque cases, and tightening basis.
+- Derive thread geometry, tensile stress area, tightening preload, and flange
+  friction torque.
+- Report continuous, peak, and momentary torque capability, residual torque,
+  shear load, bolt safety factors, assembly groove/thread-root checks, and
+  warnings.
+
+The original quick friction model is still present in the calculation module
+for compatibility and tests.
+
+Quick friction torque capacity:
 
 ```text
 T_slip = mu * F_clamp,residual,total * r_eff * n_interfaces

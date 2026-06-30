@@ -17,15 +17,20 @@ if (Test-Path ".venv\Scripts\python.exe") {
 
 & $Python @PythonArgs -m pip install --upgrade pip
 & $Python @PythonArgs -m pip install -r requirements-desktop.txt
-& $Python @PythonArgs -m pip show pyinstaller *> $null
-if ($LASTEXITCODE -ne 0) {
+
+$OldErrorActionPreference = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+& $Python @PythonArgs -c "import PyInstaller" *> $null
+$HasPyInstaller = $LASTEXITCODE -eq 0
+$ErrorActionPreference = $OldErrorActionPreference
+if (-not $HasPyInstaller) {
     & $Python @PythonArgs -m pip install pyinstaller
 }
 
 & $Python @PythonArgs -m PyInstaller `
     --noconsole `
     --onefile `
-    --name CouplingFastenerDesign `
+    --name "CTP0007 Issue H" `
     qt_fastener_app.py
 
-Write-Host "Built dist\CouplingFastenerDesign.exe"
+Write-Host "Built dist\CTP0007 Issue H.exe"
