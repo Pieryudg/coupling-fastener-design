@@ -74,10 +74,11 @@ The executable is written to:
 dist\CTP0007 Issue H.exe
 ```
 
-The detailed calculation procedure is documented in:
+The detailed calculation procedure is provided as Word and PDF copies:
 
 ```text
-docs/CTP0007_Issue_H_Calculation_Procedure.md
+docs/CTP0007_Issue_H_Calculation_Procedure.docx
+docs/CTP0007_Issue_H_Calculation_Procedure.pdf
 ```
 
 Optional macOS `.app` build:
