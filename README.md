@@ -75,8 +75,8 @@ dist\CTP0007 Issue H.exe
 ```
 
 The detailed calculation procedure is provided as Word and PDF copies. The
-procedure includes a cross-reference to the source `CTP 0007.xltx` spreadsheet
-cells used by each calculation block:
+procedure includes a formula-by-formula cross-reference to the source
+`CTP 0007.xltx` spreadsheet cells:
 
 ```text
 docs/CTP0007_Issue_H_Calculation_Procedure.docx
