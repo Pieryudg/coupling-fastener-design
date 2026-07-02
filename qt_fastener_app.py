@@ -364,7 +364,7 @@ def run_gui() -> int:
             self._prepare_table(self.capability)
             tables.addWidget(self._wrapped_table("Bolted Joint Capability", self.capability))
 
-            self.stresses = QTableWidget(4, 3)
+            self.stresses = QTableWidget(5, 3)
             self.stresses.setHorizontalHeaderLabels(["Check", "Value", "Status"])
             self._prepare_table(self.stresses)
             tables.addWidget(self._wrapped_table("Stresses and Checks", self.stresses))
@@ -1105,12 +1105,20 @@ def run_gui() -> int:
         def _stresses_goal_output(self, row: int, result: CtpResult) -> tuple[str, object, float] | None:
             mappings = {
                 0: (
+                    "Stresses and Checks - Sleeve preload SF",
+                    lambda item: (
+                        item.sleeve_preload_safety_factor
+                        if isinstance(item.sleeve_preload_safety_factor, float)
+                        else float("nan")
+                    ),
+                ),
+                1: (
                     "Stresses and Checks - Groove assembly SF",
                     lambda item: item.groove_safety_factor if isinstance(item.groove_safety_factor, float) else float("nan"),
                 ),
-                1: ("Stresses and Checks - Thread-root assembly SF", lambda item: item.thread_root_safety_factor),
-                2: ("Stresses and Checks - Thread pull-out stress MPa", lambda item: item.thread_pullout_stress_mpa),
-                3: ("Stresses and Checks - Minimum safety factor", lambda item: item.minimum_safety_factor),
+                2: ("Stresses and Checks - Thread-root assembly SF", lambda item: item.thread_root_safety_factor),
+                3: ("Stresses and Checks - Thread pull-out stress MPa", lambda item: item.thread_pullout_stress_mpa),
+                4: ("Stresses and Checks - Minimum safety factor", lambda item: item.minimum_safety_factor),
             }
             return self._numeric_goal_output(result, mappings.get(row))
 
@@ -1487,6 +1495,15 @@ def run_gui() -> int:
         def _fill_stresses(self, result: CtpResult) -> None:
             rows = [
                 (
+                    f"Sleeve preload SF (min {result.sleeve_preload_minimum_sf_limit:.2f}, rec {result.sleeve_preload_recommended_sf_limit:.2f})",
+                    _format_sf(result.sleeve_preload_safety_factor),
+                    _recommended_status(
+                        result.sleeve_preload_safety_factor,
+                        result.sleeve_preload_minimum_sf_limit,
+                        result.sleeve_preload_recommended_sf_limit,
+                    ),
+                ),
+                (
                     f"Groove assembly SF (>={result.groove_yield_sf_limit:.2f})",
                     _format_sf(result.groove_safety_factor),
                     _status(result.groove_safety_factor, result.groove_yield_sf_limit),
@@ -1518,6 +1535,15 @@ def run_gui() -> int:
         if not isinstance(value, float):
             return "N/A"
         return "Pass" if value >= limit else "Check"
+
+    def _recommended_status(value: float | str, minimum: float, recommended: float) -> str:
+        if not isinstance(value, float):
+            return "N/A"
+        if value < minimum:
+            return "Check"
+        if value < recommended:
+            return "Recommended"
+        return "Pass"
 
     def _thread_root_status(result: CtpResult) -> str:
         if result.thread_root_safety_factor < result.thread_root_required_sf_limit:

@@ -135,6 +135,7 @@ class CtpResult:
     torsional_tightening_torque_nm: float
     flange_friction_torque_nm: float
     torque_cases: tuple[CtpTorqueCase, ...]
+    sleeve_preload_safety_factor: float | str
     groove_safety_factor: float | str
     thread_root_safety_factor: float
     thread_pullout_stress_mpa: float
@@ -146,6 +147,8 @@ class CtpResult:
     preload_percent_tys_limit: float
     checking_standard: str
     case_yield_sf_limits: tuple[float, float, float]
+    sleeve_preload_minimum_sf_limit: float
+    sleeve_preload_recommended_sf_limit: float
     groove_yield_sf_limit: float
     thread_root_required_sf_limit: float
     thread_root_preferred_sf_limit: float
@@ -176,6 +179,8 @@ CTP_CHECKING_STANDARD_NAMES = tuple(CTP_CHECKING_CRITERIA)
 CTP_DEFAULT_CHECKING_STANDARD = "API671 5th edition"
 CTP_JOINT_TYPES = ("Drive bolt", "Stripper bolt", "Shim")
 CTP_DEFAULT_JOINT_TYPE = "Stripper bolt"
+CTP_SLEEVE_PRELOAD_MINIMUM_SF = 1.25
+CTP_SLEEVE_PRELOAD_RECOMMENDED_SF = 1.50
 
 
 def validate_inputs(values: CouplingInputs) -> None:
@@ -444,6 +449,12 @@ def calculate_ctp(
             ("Momentary", values.momentary_torque_nm),
         )
     )
+    sleeve_preload_safety = _sleeve_preload_safety(
+        values.sleeve_outer_diameter_mm,
+        thread_major,
+        values.sleeve_yield_mpa,
+        axial_pretension,
+    )
     groove_safety = _groove_safety(
         groove,
         axial_pretension,
@@ -475,7 +486,11 @@ def calculate_ctp(
         * first_thread_factor
     )
     numeric_sfs = [case.bolt_safety_factor for case in torque_cases]
-    numeric_sfs.extend(sf for sf in [groove_safety, thread_root_safety] if isinstance(sf, float))
+    numeric_sfs.extend(
+        sf
+        for sf in [sleeve_preload_safety, groove_safety, thread_root_safety]
+        if isinstance(sf, float)
+    )
     for case in torque_cases:
         if isinstance(case.sleeve_safety_factor, float):
             numeric_sfs.append(case.sleeve_safety_factor)
@@ -500,6 +515,7 @@ def calculate_ctp(
         torsional_tightening_torque_nm=torsional_tightening_torque,
         flange_friction_torque_nm=flange_friction_torque,
         torque_cases=torque_cases,
+        sleeve_preload_safety_factor=sleeve_preload_safety,
         groove_safety_factor=groove_safety,
         thread_root_safety_factor=thread_root_safety,
         thread_pullout_stress_mpa=thread_pullout_stress,
@@ -515,6 +531,8 @@ def calculate_ctp(
             criteria.peak_yield_sf,
             criteria.momentary_yield_sf,
         ),
+        sleeve_preload_minimum_sf_limit=CTP_SLEEVE_PRELOAD_MINIMUM_SF,
+        sleeve_preload_recommended_sf_limit=CTP_SLEEVE_PRELOAD_RECOMMENDED_SF,
         groove_yield_sf_limit=criteria.groove_yield_sf,
         thread_root_required_sf_limit=criteria.thread_root_required_sf,
         thread_root_preferred_sf_limit=criteria.thread_root_preferred_sf,
@@ -526,6 +544,7 @@ def calculate_ctp(
             values.joint_type,
             preload_percent_tys,
             preload_percent_limit,
+            sleeve_preload_safety,
             thread_pullout_stress,
             values.tapped_hole_yield_mpa,
         ),
@@ -728,6 +747,24 @@ def _torque_case(
     )
 
 
+def _sleeve_preload_safety(
+    sleeve_outer_diameter: float,
+    thread_major_diameter: float,
+    sleeve_yield: float,
+    axial_pretension: float,
+) -> float | str:
+    if sleeve_outer_diameter <= 0:
+        return "No Sleeve"
+    sleeve_area = max(
+        0.0,
+        math.pi / 4.0 * (sleeve_outer_diameter**2 - thread_major_diameter**2),
+    )
+    if sleeve_area <= 0 or axial_pretension <= 0:
+        return "Gagging"
+    preload_stress = axial_pretension / sleeve_area
+    return sleeve_yield / preload_stress if preload_stress else float("inf")
+
+
 def _groove_safety(
     groove_diameter: float,
     axial_pretension: float,
@@ -778,6 +815,7 @@ def _ctp_warnings(
     joint_type: str,
     preload_percent_tys: float,
     preload_percent_limit: float,
+    sleeve_preload_safety: float | str,
     thread_pullout_stress: float,
     tapped_hole_yield: float,
 ) -> tuple[str, ...]:
@@ -801,6 +839,16 @@ def _ctp_warnings(
         if isinstance(case.sleeve_safety_factor, float) and case.sleeve_safety_factor < yield_limit:
             warnings.append(
                 f"{case.name} sleeve safety factor is below {yield_limit:.2f} for {criteria.name}."
+            )
+    if isinstance(sleeve_preload_safety, float):
+        if sleeve_preload_safety < CTP_SLEEVE_PRELOAD_MINIMUM_SF:
+            warnings.append(
+                f"Sleeve preload safety factor is below minimum {CTP_SLEEVE_PRELOAD_MINIMUM_SF:.2f}."
+            )
+        elif sleeve_preload_safety < CTP_SLEEVE_PRELOAD_RECOMMENDED_SF:
+            warnings.append(
+                f"Sleeve preload safety factor is below recommended {CTP_SLEEVE_PRELOAD_RECOMMENDED_SF:.2f}; "
+                f"minimum is {CTP_SLEEVE_PRELOAD_MINIMUM_SF:.2f}."
             )
     if isinstance(groove_safety, float) and groove_safety < criteria.groove_yield_sf:
         warnings.append(f"Groove assembly safety factor is below {criteria.groove_yield_sf:.2f}.")

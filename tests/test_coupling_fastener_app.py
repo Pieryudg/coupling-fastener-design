@@ -337,15 +337,30 @@ class CouplingFastenerAppTests(unittest.TestCase):
         no_groove = base.__class__(**{**base.__dict__, "groove_diameter_mm": 0})
         no_groove_result = calculate_ctp(no_groove, record, get_material_yield(conn, base.material_code))
         self.assertEqual(no_groove_result.groove_safety_factor, "No groove")
+        self.assertEqual(no_groove_result.sleeve_preload_safety_factor, "No Sleeve")
 
         with_groove = base.__class__(**{**base.__dict__, "groove_diameter_mm": 12})
         with_groove_result = calculate_ctp(with_groove, record, get_material_yield(conn, base.material_code))
         self.assertEqual(with_groove_result.groove_diameter_mm, 12)
         self.assertIsInstance(with_groove_result.groove_safety_factor, float)
 
+        gagging_sleeve = base.__class__(**{**base.__dict__, "sleeve_outer_diameter_mm": 16})
+        gagging_result = calculate_ctp(gagging_sleeve, record, get_material_yield(conn, base.material_code))
+        self.assertEqual(gagging_result.sleeve_preload_safety_factor, "Gagging")
+
         with_sleeve = base.__class__(**{**base.__dict__, "sleeve_outer_diameter_mm": 24})
         sleeve_result = calculate_ctp(with_sleeve, record, get_material_yield(conn, base.material_code))
         self.assertIsInstance(sleeve_result.torque_cases[1].sleeve_safety_factor, float)
+        self.assertTrue(math.isclose(sleeve_result.sleeve_preload_safety_factor, 1.2479409705, rel_tol=1e-6))
+        self.assertIn("Sleeve preload safety factor is below minimum 1.25.", sleeve_result.warnings)
+
+        recommended_sleeve = base.__class__(**{**base.__dict__, "sleeve_outer_diameter_mm": 24.1})
+        recommended_result = calculate_ctp(recommended_sleeve, record, get_material_yield(conn, base.material_code))
+        self.assertTrue(math.isclose(recommended_result.sleeve_preload_safety_factor, 1.2666990833, rel_tol=1e-6))
+        self.assertIn(
+            "Sleeve preload safety factor is below recommended 1.50; minimum is 1.25.",
+            recommended_result.warnings,
+        )
 
 if __name__ == "__main__":
     unittest.main()
