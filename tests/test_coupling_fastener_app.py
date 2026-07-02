@@ -379,5 +379,54 @@ class CouplingFastenerAppTests(unittest.TestCase):
             )
         )
 
+    def test_ctp_sleeve_type_can_be_manually_overridden(self):
+        conn = connect()
+        record = get_ctp_screw_record(conn, "1512", "47xx")
+        base = default_ctp_inputs(record)
+
+        no_sleeve_override = base.__class__(
+            **{**base.__dict__, "sleeve_outer_diameter_mm": 24, "sleeve_type_mode": "No Sleeve"}
+        )
+        no_sleeve = calculate_ctp(no_sleeve_override, record, get_material_yield(conn, base.material_code))
+        self.assertEqual(no_sleeve.sleeve_type, "No Sleeve")
+        self.assertEqual(no_sleeve.sleeve_preload_safety_factor, "No Sleeve")
+        self.assertEqual(no_sleeve.torque_cases[1].sleeve_safety_factor, "No Sleeve")
+        self.assertEqual(no_sleeve.torque_cases[1].partial_shank_safety_factor, "N/A")
+
+        full_override = base.__class__(
+            **{
+                **base.__dict__,
+                "sleeve_outer_diameter_mm": 24,
+                "shear_plane": "Shank",
+                "sleeve_type_mode": "Full Sleeve",
+            }
+        )
+        full = calculate_ctp(full_override, record, get_material_yield(conn, base.material_code))
+        self.assertEqual(full.sleeve_type, "Full Sleeve")
+        self.assertIsInstance(full.torque_cases[1].sleeve_safety_factor, float)
+        self.assertEqual(full.torque_cases[1].partial_shank_safety_factor, "N/A")
+
+        partial_override = base.__class__(
+            **{
+                **base.__dict__,
+                "sleeve_outer_diameter_mm": 24,
+                "shear_plane": "Thread",
+                "sleeve_type_mode": "Partial Sleeve",
+            }
+        )
+        partial = calculate_ctp(partial_override, record, get_material_yield(conn, base.material_code))
+        self.assertEqual(partial.sleeve_type, "Partial Sleeve")
+        self.assertTrue(
+            math.isclose(
+                partial.torque_cases[1].partial_shank_safety_factor,
+                1.2814502491,
+                rel_tol=1e-6,
+            )
+        )
+
+        full_without_od = base.__class__(**{**base.__dict__, "sleeve_type_mode": "Full Sleeve"})
+        with self.assertRaisesRegex(ValueError, "Sleeve OD is required for Full Sleeve"):
+            calculate_ctp(full_without_od, record, get_material_yield(conn, base.material_code))
+
 if __name__ == "__main__":
     unittest.main()

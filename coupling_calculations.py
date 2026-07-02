@@ -83,6 +83,7 @@ class CtpInputs:
     nut_contact_mode: str
     custom_nut_contact_diameter_mm: float
     sleeve_outer_diameter_mm: float
+    sleeve_type_mode: str
     sleeve_yield_mpa: float
     tapped_hole_yield_mpa: float
     thread_engagement_mode: str
@@ -182,6 +183,8 @@ CTP_CHECKING_STANDARD_NAMES = tuple(CTP_CHECKING_CRITERIA)
 CTP_DEFAULT_CHECKING_STANDARD = "API671 5th edition"
 CTP_JOINT_TYPES = ("Drive bolt", "Stripper bolt", "Shim")
 CTP_DEFAULT_JOINT_TYPE = "Stripper bolt"
+CTP_SLEEVE_TYPE_MODES = ("Auto", "No Sleeve", "Full Sleeve", "Partial Sleeve")
+CTP_DEFAULT_SLEEVE_TYPE_MODE = "Auto"
 CTP_SLEEVE_PRELOAD_MINIMUM_SF = 1.25
 CTP_SLEEVE_PRELOAD_RECOMMENDED_SF = 1.50
 
@@ -364,6 +367,7 @@ def default_ctp_inputs(record: CtpScrewRecord) -> CtpInputs:
         nut_contact_mode="Standard",
         custom_nut_contact_diameter_mm=20.0,
         sleeve_outer_diameter_mm=0.0,
+        sleeve_type_mode=CTP_DEFAULT_SLEEVE_TYPE_MODE,
         sleeve_yield_mpa=640.0,
         tapped_hole_yield_mpa=0.0,
         thread_engagement_mode="Manual",
@@ -388,7 +392,11 @@ def calculate_ctp(
     groove = values.groove_diameter_mm
     contact_diameter = _contact_diameter(values, record)
     tensile_yield = values.manual_yield_mpa or material_yield_mpa
-    sleeve_type = _sleeve_type(values.sleeve_outer_diameter_mm, values.shear_plane)
+    sleeve_type = _sleeve_type(
+        values.sleeve_outer_diameter_mm,
+        values.shear_plane,
+        values.sleeve_type_mode,
+    )
 
     pitch_diameter = thread_major - 0.6495 * pitch
     root_diameter = thread_major - 1.2268 * pitch
@@ -457,6 +465,7 @@ def calculate_ctp(
     sleeve_preload_safety = _sleeve_preload_safety(
         values.sleeve_outer_diameter_mm,
         thread_major,
+        sleeve_type,
         values.sleeve_yield_mpa,
         axial_pretension,
     )
@@ -570,6 +579,8 @@ def validate_ctp_inputs(values: CtpInputs) -> None:
         raise ValueError(f"Unknown checking standard: {values.checking_standard}")
     if values.joint_type not in CTP_JOINT_TYPES:
         raise ValueError(f"Unknown joint type: {values.joint_type}")
+    if values.sleeve_type_mode not in CTP_SLEEVE_TYPE_MODES:
+        raise ValueError(f"Unknown sleeve type: {values.sleeve_type_mode}")
     if values.pack_thickness_mm < 0:
         raise ValueError("Pack thickness must be zero or positive.")
     if values.joint_type in {"Drive bolt", "Shim"} and values.pack_thickness_mm <= 0:
@@ -587,6 +598,8 @@ def validate_ctp_inputs(values: CtpInputs) -> None:
             raise ValueError(f"{label} must be greater than zero.")
     if values.sleeve_outer_diameter_mm < 0:
         raise ValueError("Sleeve outer diameter must be zero or positive.")
+    if values.sleeve_type_mode in {"Full Sleeve", "Partial Sleeve"} and values.sleeve_outer_diameter_mm <= 0:
+        raise ValueError(f"Sleeve OD is required for {values.sleeve_type_mode}.")
     if values.tapped_hole_yield_mpa < 0:
         raise ValueError("Tapped hole yield must be zero or positive.")
     if values.leverarm_mm < 0:
@@ -601,7 +614,9 @@ def _contact_diameter(values: CtpInputs, record: CtpScrewRecord) -> float:
     return record.contact_diameter_mm
 
 
-def _sleeve_type(sleeve_outer_diameter: float, shear_plane: str) -> str:
+def _sleeve_type(sleeve_outer_diameter: float, shear_plane: str, mode: str) -> str:
+    if mode != "Auto":
+        return mode
     if sleeve_outer_diameter <= 0:
         return "No Sleeve"
     if shear_plane == "Shank":
@@ -722,20 +737,23 @@ def _torque_case(
         friction_ratio = flange_friction_torque / duty_torque
     residual_torque = max(0.0, duty_torque - flange_friction_torque)
     shear_load = 2000.0 * residual_torque / (values.pcd_mm * values.screw_count)
+    has_sleeve = sleeve_type in {"Full Sleeve", "Partial Sleeve"}
     sleeve_share = (
         shear_load * (sleeve_outer_diameter**2 - thread_major_diameter**2) / sleeve_outer_diameter**2
-        if sleeve_outer_diameter > thread_major_diameter
+        if has_sleeve and sleeve_outer_diameter > thread_major_diameter
         else 0.0
     )
     bolt_share = shear_load - sleeve_share
     sleeve_safety: float | str = "No Sleeve"
-    if sleeve_outer_diameter > thread_major_diameter:
+    if has_sleeve and sleeve_outer_diameter > 0:
         bending = (
             sleeve_share
             * leverarm_mm
             * sleeve_outer_diameter
             / 2.0
             / (math.pi / 64.0 * (sleeve_outer_diameter**4 - thread_major_diameter**4))
+            if sleeve_outer_diameter > thread_major_diameter
+            else 0.0
         )
         shear = shear_load / (math.pi / 4.0 * sleeve_outer_diameter**2)
         von_mises = math.sqrt(bending**2 + 3.0 * shear**2)
@@ -780,10 +798,11 @@ def _torque_case(
 def _sleeve_preload_safety(
     sleeve_outer_diameter: float,
     thread_major_diameter: float,
+    sleeve_type: str,
     sleeve_yield: float,
     axial_pretension: float,
 ) -> float | str:
-    if sleeve_outer_diameter <= 0:
+    if sleeve_type == "No Sleeve" or sleeve_outer_diameter <= 0 or thread_major_diameter <= 0:
         return "No Sleeve"
     sleeve_area = max(
         0.0,

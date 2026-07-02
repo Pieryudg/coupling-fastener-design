@@ -23,7 +23,9 @@ from coupling_calculations import (
     CTP_CHECKING_STANDARD_NAMES,
     CTP_DEFAULT_CHECKING_STANDARD,
     CTP_DEFAULT_JOINT_TYPE,
+    CTP_DEFAULT_SLEEVE_TYPE_MODE,
     CTP_JOINT_TYPES,
+    CTP_SLEEVE_TYPE_MODES,
     CtpInputs,
     CtpResult,
     calculate_ctp,
@@ -215,6 +217,9 @@ def run_gui() -> int:
             self.nut_contact_mode.addItems(["Standard", "Special"])
             self.custom_contact = self._optional_diameter_combo(0, 0, 1000, 3)
             self.sleeve_od = self._optional_diameter_combo(0, 0, 1000, 3)
+            self.sleeve_type = NoWheelComboBox()
+            self.sleeve_type.addItems(list(CTP_SLEEVE_TYPE_MODES))
+            self.sleeve_type.setCurrentText(CTP_DEFAULT_SLEEVE_TYPE_MODE)
             self.sleeve_material = NoWheelComboBox()
             self.sleeve_material.addItems(list(SLEEVE_MATERIAL_YIELD_MPA))
             self.sleeve_material.setCurrentText("N/A")
@@ -267,6 +272,7 @@ def run_gui() -> int:
                     ("Joint type", self.joint_type),
                     ("Pack thickness mm", self.pack_thickness),
                     ("Sleeve OD mm", self.sleeve_od),
+                    ("Sleeve type", self.sleeve_type),
                     ("Sleeve material", self.sleeve_material),
                     ("Sleeve yield MPa", self.sleeve_yield),
                     ("Tapped hole yield MPa", self.tapped_hole_yield),
@@ -301,6 +307,7 @@ def run_gui() -> int:
             self.pack_thickness.currentTextChanged.connect(self._sync_joint_geometry)
             self.nut_contact_mode.currentTextChanged.connect(self._sync_nut_contact)
             self.sleeve_od.currentTextChanged.connect(self._sync_sleeve_fields)
+            self.sleeve_type.currentTextChanged.connect(self._sync_sleeve_fields)
             self.sleeve_material.currentTextChanged.connect(self._load_sleeve_yield)
             for preset in [self.screw_nut_preset, self.nut_part_preset, self.part_part_preset]:
                 preset.currentTextChanged.connect(self._apply_friction_presets)
@@ -519,6 +526,7 @@ def run_gui() -> int:
                 self.nut_contact_mode,
                 self.custom_contact,
                 self.sleeve_od,
+                self.sleeve_type,
                 self.sleeve_material,
                 self.sleeve_yield,
                 self.tapped_hole_yield,
@@ -558,6 +566,7 @@ def run_gui() -> int:
                 "nut_contact_mode": self.nut_contact_mode.currentText(),
                 "custom_contact": self.custom_contact.currentText(),
                 "sleeve_od": self.sleeve_od.currentText(),
+                "sleeve_type": self.sleeve_type.currentText(),
                 "sleeve_material": self.sleeve_material.currentText(),
                 "sleeve_yield": self.sleeve_yield.value(),
                 "tapped_hole_yield": self.tapped_hole_yield.currentText(),
@@ -603,6 +612,7 @@ def run_gui() -> int:
                 self._set_combo_text(self.nut_contact_mode, state.get("nut_contact_mode", self.nut_contact_mode.currentText()))
                 self.custom_contact.setCurrentText(str(state.get("custom_contact", self.custom_contact.currentText())))
                 self.sleeve_od.setCurrentText(str(state.get("sleeve_od", self.sleeve_od.currentText())))
+                self._set_combo_text(self.sleeve_type, state.get("sleeve_type", self.sleeve_type.currentText()))
                 self._set_combo_text(self.sleeve_material, state.get("sleeve_material", self.sleeve_material.currentText()))
                 self.sleeve_yield.setValue(float(state.get("sleeve_yield", self.sleeve_yield.value())))
                 self.tapped_hole_yield.setCurrentText(str(state.get("tapped_hole_yield", self.tapped_hole_yield.currentText())))
@@ -832,7 +842,7 @@ def run_gui() -> int:
                 sleeve_od = self._optional_diameter_value(self.sleeve_od, "Sleeve OD")
             except ValueError:
                 sleeve_od = 0.0
-            if sleeve_od <= 0:
+            if sleeve_od <= 0 or self.sleeve_type.currentText() == "No Sleeve":
                 self.sleeve_material.blockSignals(True)
                 self.sleeve_yield.blockSignals(True)
                 self.sleeve_material.setCurrentText("N/A")
@@ -939,6 +949,7 @@ def run_gui() -> int:
                     else self._optional_diameter_value(self.custom_contact, "Special contact diameter")
                 ),
                 sleeve_outer_diameter_mm=self._optional_diameter_value(self.sleeve_od, "Sleeve OD"),
+                sleeve_type_mode=self.sleeve_type.currentText(),
                 sleeve_yield_mpa=self.sleeve_yield.value(),
                 tapped_hole_yield_mpa=self._optional_diameter_value(self.tapped_hole_yield, "Tapped hole yield"),
                 thread_engagement_mode="Thread" if self.thread_engagement.value() == 0 else "Manual",
@@ -1468,7 +1479,7 @@ def run_gui() -> int:
                 ("Preload % TYS", f"{result.preload_percent_tys:.2f}%"),
                 ("Preload % limit", f"{result.preload_percent_tys_limit:.0f}%"),
                 ("Joint type / Leff", f"{result.joint_type} / {result.leverarm_mm:.3f} mm"),
-                ("Sleeve type", result.sleeve_type),
+                ("Resolved sleeve type", result.sleeve_type),
             ]
             selectable_rows = {2, 3, 4, 5, 6, 7, 8, 9, 10}
             self.summary.setRowCount(len(rows))
