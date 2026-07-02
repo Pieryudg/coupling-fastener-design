@@ -337,7 +337,9 @@ class CouplingFastenerAppTests(unittest.TestCase):
         no_groove = base.__class__(**{**base.__dict__, "groove_diameter_mm": 0})
         no_groove_result = calculate_ctp(no_groove, record, get_material_yield(conn, base.material_code))
         self.assertEqual(no_groove_result.groove_safety_factor, "No groove")
+        self.assertEqual(no_groove_result.sleeve_type, "No Sleeve")
         self.assertEqual(no_groove_result.sleeve_preload_safety_factor, "No Sleeve")
+        self.assertEqual(no_groove_result.torque_cases[1].partial_shank_safety_factor, "N/A")
 
         with_groove = base.__class__(**{**base.__dict__, "groove_diameter_mm": 12})
         with_groove_result = calculate_ctp(with_groove, record, get_material_yield(conn, base.material_code))
@@ -350,7 +352,9 @@ class CouplingFastenerAppTests(unittest.TestCase):
 
         with_sleeve = base.__class__(**{**base.__dict__, "sleeve_outer_diameter_mm": 24})
         sleeve_result = calculate_ctp(with_sleeve, record, get_material_yield(conn, base.material_code))
+        self.assertEqual(sleeve_result.sleeve_type, "Full Sleeve")
         self.assertIsInstance(sleeve_result.torque_cases[1].sleeve_safety_factor, float)
+        self.assertEqual(sleeve_result.torque_cases[1].partial_shank_safety_factor, "N/A")
         self.assertTrue(math.isclose(sleeve_result.sleeve_preload_safety_factor, 1.2479409705, rel_tol=1e-6))
         self.assertIn("Sleeve preload safety factor is below minimum 1.25.", sleeve_result.warnings)
 
@@ -360,6 +364,19 @@ class CouplingFastenerAppTests(unittest.TestCase):
         self.assertIn(
             "Sleeve preload safety factor is below recommended 1.50; minimum is 1.25.",
             recommended_result.warnings,
+        )
+
+        partial_sleeve = base.__class__(
+            **{**base.__dict__, "sleeve_outer_diameter_mm": 24, "shear_plane": "Shank"}
+        )
+        partial_result = calculate_ctp(partial_sleeve, record, get_material_yield(conn, base.material_code))
+        self.assertEqual(partial_result.sleeve_type, "Partial Sleeve")
+        self.assertTrue(
+            math.isclose(
+                partial_result.torque_cases[1].partial_shank_safety_factor,
+                1.6445411569,
+                rel_tol=1e-6,
+            )
         )
 
 if __name__ == "__main__":

@@ -111,6 +111,8 @@ class CtpTorqueCase:
     residual_torque_nm: float
     shear_load_per_joint_n: float
     sleeve_safety_factor: float | str
+    partial_shank_von_mises_mpa: float | str
+    partial_shank_safety_factor: float | str
     bolt_von_mises_mpa: float
     bolt_safety_factor: float
 
@@ -127,6 +129,7 @@ class CtpResult:
     groove_diameter_mm: float
     contact_diameter_mm: float
     average_nut_radius_mm: float
+    sleeve_type: str
     tensile_yield_mpa: float
     axial_pretension_n: float
     tightening_torque_nm: float
@@ -385,6 +388,7 @@ def calculate_ctp(
     groove = values.groove_diameter_mm
     contact_diameter = _contact_diameter(values, record)
     tensile_yield = values.manual_yield_mpa or material_yield_mpa
+    sleeve_type = _sleeve_type(values.sleeve_outer_diameter_mm, values.shear_plane)
 
     pitch_diameter = thread_major - 0.6495 * pitch
     root_diameter = thread_major - 1.2268 * pitch
@@ -441,6 +445,7 @@ def calculate_ctp(
             thread_major_diameter=thread_major,
             sleeve_outer_diameter=values.sleeve_outer_diameter_mm,
             sleeve_yield=values.sleeve_yield_mpa,
+            sleeve_type=sleeve_type,
             tensile_yield=tensile_yield,
         )
         for name, duty in (
@@ -494,6 +499,8 @@ def calculate_ctp(
     for case in torque_cases:
         if isinstance(case.sleeve_safety_factor, float):
             numeric_sfs.append(case.sleeve_safety_factor)
+        if isinstance(case.partial_shank_safety_factor, float):
+            numeric_sfs.append(case.partial_shank_safety_factor)
     minimum_safety = min(numeric_sfs) if numeric_sfs else float("inf")
 
     return CtpResult(
@@ -507,6 +514,7 @@ def calculate_ctp(
         groove_diameter_mm=groove,
         contact_diameter_mm=contact_diameter,
         average_nut_radius_mm=average_nut_radius,
+        sleeve_type=sleeve_type,
         tensile_yield_mpa=tensile_yield,
         axial_pretension_n=axial_pretension,
         tightening_torque_nm=reported_tightening_torque,
@@ -591,6 +599,14 @@ def _contact_diameter(values: CtpInputs, record: CtpScrewRecord) -> float:
     if values.nut_contact_mode == "Special" and values.custom_nut_contact_diameter_mm > 0:
         return values.custom_nut_contact_diameter_mm
     return record.contact_diameter_mm
+
+
+def _sleeve_type(sleeve_outer_diameter: float, shear_plane: str) -> str:
+    if sleeve_outer_diameter <= 0:
+        return "No Sleeve"
+    if shear_plane == "Shank":
+        return "Partial Sleeve"
+    return "Full Sleeve"
 
 
 def _effective_leverarm(values: CtpInputs) -> float:
@@ -697,6 +713,7 @@ def _torque_case(
     thread_major_diameter: float,
     sleeve_outer_diameter: float,
     sleeve_yield: float,
+    sleeve_type: str,
     tensile_yield: float,
 ) -> CtpTorqueCase:
     if duty_torque == 0:
@@ -724,6 +741,17 @@ def _torque_case(
         von_mises = math.sqrt(bending**2 + 3.0 * shear**2)
         sleeve_safety = sleeve_yield / von_mises if von_mises else float("inf")
     axial_stress = 4.0 * axial_pretension / (math.pi * shear_bending_diameter**2)
+    partial_shank_vm: float | str = "N/A"
+    partial_shank_safety: float | str = "N/A"
+    if sleeve_type == "Partial Sleeve":
+        partial_shank_shear = shear_load / (math.pi / 4.0 * shear_bending_diameter**2)
+        partial_shank_vm_numeric = math.sqrt(axial_stress**2 + 3.0 * partial_shank_shear**2)
+        partial_shank_vm = partial_shank_vm_numeric
+        partial_shank_safety = (
+            tensile_yield / partial_shank_vm_numeric
+            if partial_shank_vm_numeric
+            else float("inf")
+        )
     bending_stress = (
         bolt_share
         * leverarm_mm
@@ -742,6 +770,8 @@ def _torque_case(
         residual_torque_nm=residual_torque,
         shear_load_per_joint_n=shear_load,
         sleeve_safety_factor=sleeve_safety,
+        partial_shank_von_mises_mpa=partial_shank_vm,
+        partial_shank_safety_factor=partial_shank_safety,
         bolt_von_mises_mpa=bolt_vm,
         bolt_safety_factor=bolt_safety,
     )
@@ -839,6 +869,10 @@ def _ctp_warnings(
         if isinstance(case.sleeve_safety_factor, float) and case.sleeve_safety_factor < yield_limit:
             warnings.append(
                 f"{case.name} sleeve safety factor is below {yield_limit:.2f} for {criteria.name}."
+            )
+        if isinstance(case.partial_shank_safety_factor, float) and case.partial_shank_safety_factor < yield_limit:
+            warnings.append(
+                f"{case.name} partial sleeve shank safety factor is below {yield_limit:.2f} for {criteria.name}."
             )
     if isinstance(sleeve_preload_safety, float):
         if sleeve_preload_safety < CTP_SLEEVE_PRELOAD_MINIMUM_SF:

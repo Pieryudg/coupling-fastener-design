@@ -347,7 +347,7 @@ def run_gui() -> int:
             self._prepare_table(self.summary)
             tables.addWidget(self._wrapped_table("Screw Data Summary", self.summary))
 
-            self.capability = QTableWidget(3, 9)
+            self.capability = QTableWidget(3, 10)
             self.capability.setHorizontalHeaderLabels(
                 [
                     "Case",
@@ -357,6 +357,7 @@ def run_gui() -> int:
                     "Residual Nm",
                     "Shear N",
                     "Sleeve SF",
+                    "Partial Shank SF",
                     "Maxi Stress (VM) MPa",
                     "Bolt SF",
                 ]
@@ -1097,8 +1098,16 @@ def run_gui() -> int:
                         else float("nan")
                     ),
                 ),
-                7: (f"{prefix} Maxi Stress (VM) MPa", lambda item, row=row: item.torque_cases[row].bolt_von_mises_mpa),
-                8: (f"{prefix} Bolt SF", lambda item, row=row: item.torque_cases[row].bolt_safety_factor),
+                7: (
+                    f"{prefix} Partial Shank SF",
+                    lambda item, row=row: (
+                        item.torque_cases[row].partial_shank_safety_factor
+                        if isinstance(item.torque_cases[row].partial_shank_safety_factor, float)
+                        else float("nan")
+                    ),
+                ),
+                8: (f"{prefix} Maxi Stress (VM) MPa", lambda item, row=row: item.torque_cases[row].bolt_von_mises_mpa),
+                9: (f"{prefix} Bolt SF", lambda item, row=row: item.torque_cases[row].bolt_safety_factor),
             }
             return self._numeric_goal_output(result, mappings.get(column))
 
@@ -1459,6 +1468,7 @@ def run_gui() -> int:
                 ("Preload % TYS", f"{result.preload_percent_tys:.2f}%"),
                 ("Preload % limit", f"{result.preload_percent_tys_limit:.0f}%"),
                 ("Joint type / Leff", f"{result.joint_type} / {result.leverarm_mm:.3f} mm"),
+                ("Sleeve type", result.sleeve_type),
             ]
             selectable_rows = {2, 3, 4, 5, 6, 7, 8, 9, 10}
             self.summary.setRowCount(len(rows))
@@ -1479,6 +1489,7 @@ def run_gui() -> int:
                     f"{case.residual_torque_nm:,.0f}",
                     f"{case.shear_load_per_joint_n:,.0f}",
                     _format_sf(case.sleeve_safety_factor),
+                    _format_sf(case.partial_shank_safety_factor),
                     f"{case.bolt_von_mises_mpa:.1f}",
                     f"{case.bolt_safety_factor:.3f}",
                 ]
@@ -1487,6 +1498,8 @@ def run_gui() -> int:
                     if column == 3 and not isinstance(case.friction_ratio, float):
                         selectable = False
                     if column == 6 and not isinstance(case.sleeve_safety_factor, float):
+                        selectable = False
+                    if column == 7 and not isinstance(case.partial_shank_safety_factor, float):
                         selectable = False
                     self._set_item(self.capability, row, column, value, selectable)
             self.capability.resizeColumnsToContents()
